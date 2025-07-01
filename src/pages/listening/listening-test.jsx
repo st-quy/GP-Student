@@ -804,6 +804,7 @@ const ListeningTest = () => {
         }
       } else if (answerContent.type === 'dropdown-list') {
         let formattedCorrectAnswer = []
+
         if (answerContent.correctAnswer && Array.isArray(answerContent.correctAnswer)) {
           formattedCorrectAnswer = answerContent.correctAnswer.map(item => {
             if (item.key && item.value) {

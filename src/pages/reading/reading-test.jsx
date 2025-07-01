@@ -438,38 +438,39 @@ const ReadingTest = () => {
     if (currentPartIndex === 0 && processedData.type === 'paragraph') {
       const cleanedQuestion = processedData.question.replace(/\s*\([^)]*\)/g, '')
       const hasSlashFormat = currentQuestion.Content.includes('/') && currentQuestion.Content.split('/').length >= 2
+
       return (
         <div className="mx-auto w-full max-w-4xl">
           <div className="whitespace-pre-wrap text-base text-gray-800">
             {cleanedQuestion.split(/(\d+\.)/).map((part, index) => {
               if (part.match(/^\d+\.$/)) {
                 const number = part.replace('.', '')
-                if (number === '0') {
-                  return part
-                } else {
-                  return (
-                    <React.Fragment key={index}>
-                      {hasSlashFormat ? '' : part}
-                      <Select
-                        onChange={value => handleAnswerSubmit({ ...answer, [number]: value })}
-                        value={answer?.[number] || ''}
-                        className="mx-2 my-2 inline-block"
-                        size="large"
-                        style={{ fontSize: '16px', minWidth: 100 }}
-                        dropdownStyle={{ maxWidth: 'max-content' }}
-                      >
-                        {processedData.answers[number]?.map(option => {
-                          const displayText = option.replace(/^[A-Z]\. /, '')
-                          return (
-                            <Option key={option} value={option} style={{ whiteSpace: 'normal' }} className="!text-base">
-                              {displayText}
-                            </Option>
-                          )
-                        })}
-                      </Select>
-                    </React.Fragment>
-                  )
-                }
+
+                return (
+                  <React.Fragment key={index}>
+                    {hasSlashFormat ? '' : part}
+                    <Select
+                      onChange={value =>
+                        number === '0' ? undefined : handleAnswerSubmit({ ...answer, [number]: value })
+                      }
+                      value={number === '0' ? processedData.answers[0]?.[0] : answer?.[number]}
+                      className="mx-2 my-2 inline-block"
+                      size="large"
+                      style={{ fontSize: '16px', minWidth: 100 }}
+                      dropdownStyle={{ maxWidth: 'max-content' }}
+                      disabled={number === '0'}
+                    >
+                      {processedData.answers[number]?.map(option => {
+                        const displayText = option.replace(/^[A-Z]\. /, '')
+                        return (
+                          <Option key={option} value={option} style={{ whiteSpace: 'normal' }} className="!text-base">
+                            {displayText}
+                          </Option>
+                        )
+                      })}
+                    </Select>
+                  </React.Fragment>
+                )
               }
               return <span key={index}>{part}</span>
             })}
