@@ -113,9 +113,8 @@ const uploadToMinIO = async blob => {
     const file = new File([blob], fileName, { type: 'audio/mpeg' })
     // Call BE to get presigned URL
     const res = await axiosInstance.get(`/presigned-url?filename=${file.name}`)
-    
-    const { uploadUrl, fileUrl } = await res.data
 
+    const { uploadUrl, fileUrl } = await res.data
 
     // Upload to MinIO
     await fetch(uploadUrl, {

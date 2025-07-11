@@ -85,9 +85,9 @@ const PrivateRoute = [
           {
             path: 'test',
             element: (
-              <TestLayout>
-                <GrammarTest />
-              </TestLayout>
+              // <TestLayout>
+              <GrammarTest />
+              // </TestLayout>
             )
           }
         ]

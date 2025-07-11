@@ -26,22 +26,19 @@ const QuestionForm = ({
     }
   }
 
-  const index = currentPart.SubContent.indexOf(',')
-  const first = index !== -1 ? currentPart.SubContent.slice(0, index + 1) : currentPart.SubContent
-  const rest = index !== -1 ? currentPart.SubContent.slice(index + 1).trim() : ''
-const commaIndex = currentPart.SubContent.indexOf(',');
+  const commaIndex = currentPart.SubContent.indexOf(',')
 
-// Tìm vị trí dấu chấm cuối cùng (kết thúc nội dung)
-const lastPeriodIndex = currentPart.SubContent.lastIndexOf('.');
+  // Tìm vị trí dấu chấm cuối cùng (kết thúc nội dung)
+  const lastPeriodIndex = currentPart.SubContent.lastIndexOf('.')
 
-// Cắt phần lời chào
-const greeting = currentPart.SubContent.slice(0, commaIndex + 1).trim();
+  // Cắt phần lời chào
+  const greeting = currentPart.SubContent.slice(0, commaIndex + 1).trim()
 
-// Cắt phần nội dung từ sau dấu phẩy đến dấu chấm cuối cùng
-const content = currentPart.SubContent.slice(commaIndex + 1, lastPeriodIndex + 1).trim();
+  // Cắt phần nội dung từ sau dấu phẩy đến dấu chấm cuối cùng
+  const content = currentPart.SubContent.slice(commaIndex + 1, lastPeriodIndex + 1).trim()
 
-// Cắt phần chữ ký từ sau dấu chấm cuối cùng
-const signature = currentPart.SubContent.slice(lastPeriodIndex + 1).trim();
+  // Cắt phần chữ ký từ sau dấu chấm cuối cùng
+  const signature = currentPart.SubContent.slice(lastPeriodIndex + 1).trim()
 
   return (
     <Form layout="vertical">
@@ -52,15 +49,17 @@ const signature = currentPart.SubContent.slice(lastPeriodIndex + 1).trim();
             .trim()}
         </Title>
       </div>
-      <div className='mb-4 w-full'>
-        <Typography>
-          {greeting}
-          <br />
-          {content}
-          <br/>
-          {signature}
-        </Typography>
+      {currentPart?.SubContent.length > 1 && (
+        <div className="mb-4 w-full">
+          <Typography>
+            {greeting}
+            <br />
+            {content}
+            <br />
+            {signature}
+          </Typography>
         </div>
+      )}
 
       {[...currentPart.Questions]
         .sort((a, b) => a.Sequence - b.Sequence)
