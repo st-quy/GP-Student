@@ -1,5 +1,5 @@
 import { EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons'
-import { EMAIL_REG, PASSWORD_REG, PHONE_REG } from '@shared/lib/constants/reg'
+import { EMAIL_REG, PASSWORD_REG } from '@shared/lib/constants/reg'
 import { useRegister } from '@shared/lib/hooks/useAuthUsers'
 import { Form, Input, Button, Typography, Space, Row, Col, message } from 'antd'
 import { useState } from 'react'
@@ -161,21 +161,21 @@ const RegisterPage = () => {
                   <Form.Item
                     label={
                       <Text strong className="!text-sm">
-                        Class Name <span className="text-red-500">*</span>
+                        Class Name
                       </Text>
                     }
                     name="class"
-                    rules={[
-                      { required: true, message: 'Class name is required' },
-                      { min: 2, message: 'At least 2 characters' },
-                      { max: 100, message: 'Cannot exceed 100 characters' },
-                      { pattern: /^[A-Za-z0-9\s]+$/, message: 'Only alphanumeric characters and spaces are allowed' }
-                    ]}
+                    // rules={[
+                    //   { required: true, message: 'Class name is required' },
+                    //   { min: 2, message: 'At least 2 characters' },
+                    //   { max: 100, message: 'Cannot exceed 100 characters' },
+                    //   { pattern: /^[A-Za-z0-9\s]+$/, message: 'Only alphanumeric characters and spaces are allowed' }
+                    // ]}
                     hasFeedback
                     className="!mb-1"
                   >
                     <Input
-                      placeholder="Class Name"
+                      placeholder="GCDxxxx"
                       className="!h-11 !rounded-md !border !bg-gray-50 !px-4 !py-2.5 !text-base"
                     />
                   </Form.Item>
@@ -199,7 +199,7 @@ const RegisterPage = () => {
                     className="!mb-1"
                   >
                     <Input
-                      placeholder="Student ID"
+                      placeholder="GCDxxxx"
                       className="!h-11 !rounded-md !border !bg-gray-50 !px-4 !py-2.5 !text-base"
                     />
                   </Form.Item>
@@ -208,15 +208,15 @@ const RegisterPage = () => {
                   <Form.Item
                     label={
                       <Text strong className="!text-sm">
-                        Phone Number <span className="text-red-500">*</span>
+                        Phone Number
                       </Text>
                     }
                     name="phone"
-                    rules={[
-                      { required: true, message: 'Phone number is required' },
-                      { pattern: /^\d+$/, message: 'Phone number must contain only numbers' },
-                      { pattern: PHONE_REG, message: 'Phone number is not valid (e.g. 0988668686)' }
-                    ]}
+                    // rules={[
+                    //   { required: true, message: 'Phone number is required' },
+                    //   { pattern: /^\d+$/, message: 'Phone number must contain only numbers' },
+                    //   { pattern: PHONE_REG, message: 'Phone number is not valid (e.g. 0988668686)' }
+                    // ]}
                     hasFeedback
                     className="!mb-1"
                   >
