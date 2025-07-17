@@ -408,7 +408,7 @@ const ReadingTest = () => {
                     <Select
                       onChange={value => handleAnswerSubmit({ ...answer, [`Paragraph ${index + 1}`]: value })}
                       value={answer?.[`Paragraph ${index + 1}`] || ''}
-                      className="w-80"
+                      className="w-full"
                       placeholder="Select a heading"
                       size="large"
                       style={{ fontSize: '16px' }}
@@ -463,8 +463,8 @@ const ReadingTest = () => {
                       {processedData.answers[number]?.map(option => {
                         const displayText = option.replace(/^[A-Z]\. /, '')
                         return (
-                          <Option key={option} value={option} style={{ whiteSpace: 'normal' }} className="!text-base">
-                            {displayText}
+                          <Option key={option} value={option} style={{ whiteSpace: 'normal' }}>
+                            <div className={number === '0' ? '!text-black' : '!text-base'}>{displayText}</div>
                           </Option>
                         )
                       })}
