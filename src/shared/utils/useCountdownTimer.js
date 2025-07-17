@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 const useCountdownTimer = (duration, onAutoSubmit) => {
   const [timeLeft, setTimeLeft] = useState(duration)
+
   useEffect(() => {
     if (timeLeft <= 0) {
       if (onAutoSubmit) {
@@ -14,6 +15,7 @@ const useCountdownTimer = (duration, onAutoSubmit) => {
     // eslint-disable-next-line consistent-return
     return () => clearInterval(timer)
   }, [timeLeft, onAutoSubmit])
+
   const formatTime = seconds => {
     const hrs = Math.floor(seconds / 3600)
     const mins = Math.floor((seconds % 3600) / 60)

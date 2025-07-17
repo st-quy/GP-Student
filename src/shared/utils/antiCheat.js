@@ -291,20 +291,20 @@ const useAntiCheat = () => {
   // }, [])
 
   const enableFullScreen = async () => {
-    // try {
-    //   if (document.documentElement.requestFullscreen) {
-    //     await document.documentElement.requestFullscreen()
-    //     setShowAlert(false)
-    //     sessionStorage.setItem('testInProgress', 'true')
-    //     sessionStorage.setItem('wasFullscreen', 'true')
-    //   } else {
-    //     throw new Error('Full-screen mode is not supported.')
-    //   }
-    // } catch (err) {
-    //   console.error('Failed to enable full-screen mode:', err)
-    //   setAlertMessage('⚠️ Full-screen activation failed! Please enable it manually to continue your test.')
-    //   setShowAlert(true)
-    // }
+    try {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen()
+        // setShowAlert(false)
+        // sessionStorage.setItem('testInProgress', 'true')
+        // sessionStorage.setItem('wasFullscreen', 'true')
+      } else {
+        throw new Error('Full-screen mode is not supported.')
+      }
+    } catch (err) {
+      console.error('Failed to enable full-screen mode:', err)
+      // setAlertMessage('⚠️ Full-screen activation failed! Please enable it manually to continue your test.')
+      // setShowAlert(true)
+    }
   }
 
   return { showAlert, alertMessage, enableFullScreen }

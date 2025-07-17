@@ -25,7 +25,7 @@ const EnterSessionKey = () => {
       const currentSkill = localStorage.getItem('current_skill')
       const key = localStorage.getItem('key')
 
-      localStorage.clear()
+      // localStorage.clear()
 
       if (accessToken) {
         localStorage.setItem('access_token', accessToken)

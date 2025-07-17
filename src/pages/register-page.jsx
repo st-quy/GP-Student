@@ -175,7 +175,7 @@ const RegisterPage = () => {
                     className="!mb-1"
                   >
                     <Input
-                      placeholder="GCDxxxx"
+                      placeholder="GWxxxxx"
                       className="!h-11 !rounded-md !border !bg-gray-50 !px-4 !py-2.5 !text-base"
                     />
                   </Form.Item>
@@ -191,10 +191,7 @@ const RegisterPage = () => {
                       </Text>
                     }
                     name="studentCode"
-                    rules={[
-                      { required: true, message: 'Student ID is required' },
-                      { pattern: /^[A-Z]{3}\d{6}$/, message: 'Student ID must have 3 letters followed by 6 numbers' }
-                    ]}
+                    rules={[{ required: true, message: 'Student ID is required' }]}
                     hasFeedback
                     className="!mb-1"
                   >

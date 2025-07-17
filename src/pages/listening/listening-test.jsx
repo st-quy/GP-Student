@@ -700,6 +700,7 @@ const ListeningTest = () => {
       window.removeEventListener('forceSubmit', handleForceSubmit)
     }
   }, [handleForceSubmit])
+
   const handleAutoSubmit = () => {
     handleSubmitAnswers(true)
   }

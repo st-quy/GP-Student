@@ -19,6 +19,7 @@ export const fetchListeningTestDetails = async () => {
         skillName: 'LISTENING'
       }
     })
+
     return response.data
   } catch (error) {
     console.error('Error fetching listening test details:', error)
