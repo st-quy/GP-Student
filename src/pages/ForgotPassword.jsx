@@ -23,14 +23,14 @@ const ForgotPassword = () => {
         {
           onSuccess: () => {
             message.success({
-              content: 'Password reset link sent to your email',
+              content: 'Password reset sent to your email',
               duration: 3,
               icon: <CheckCircleOutlined style={{ color: '#52c41a' }} />
             })
             form.resetFields()
           },
           onError: error => {
-            console.error('Forgot password error:', error)
+            console.error('Reset password error:', error)
             message.error({
               content: 'Something went wrong. Please try again.',
               duration: 3
@@ -39,7 +39,7 @@ const ForgotPassword = () => {
         }
       )
     } catch (error) {
-      console.error('Forgot password error:', error)
+      console.error('Reset password error:', error)
       message.error({
         content: 'Something went wrong. Please try again.',
         duration: 3
