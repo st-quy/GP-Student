@@ -217,7 +217,7 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
             try {
               setIsUploading(true)
               const result = await uploadToMinIO(blob)
-              
+
               setHasUploaded(true)
               if (currentQuestion && result.fileUrl) {
                 addQuestionAnswer(currentQuestion.ID, result.fileUrl)
@@ -276,7 +276,7 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
   }
 
   return (
-    <div className="flex h-screen w-full flex-col rounded-xl bg-white lg:flex-row">
+    <div className="flex h-screen w-full flex-row rounded-xl bg-white">
       <QuestionDisplay
         data={data}
         currentQuestion={currentQuestion}
