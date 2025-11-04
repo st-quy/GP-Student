@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+/* eslint-disable no-unused-vars, unused-imports/no-unused-vars */
+import { useRef, useState } from 'react'
 
 const useAntiCheat = () => {
   const [alertMessage, setAlertMessage] = useState('')
