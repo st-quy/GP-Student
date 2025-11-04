@@ -107,6 +107,10 @@ const LoginPage = () => {
                   {
                     required: true,
                     message: 'Email is required'
+                  },
+                  {
+                    type: 'email',
+                    message: 'Please enter a valid email'
                   }
                 ]}
                 className="!mb-1"
@@ -125,6 +129,12 @@ const LoginPage = () => {
                     </Text>
                   }
                   name="password"
+                  rules={[
+                    {
+                      required: true,
+                      message: 'Password is required'
+                    }
+                  ]}
                   className="!mb-0"
                   validateStatus={showPasswordError || loginError ? 'error' : loginSuccess ? 'success' : ''}
                 >
