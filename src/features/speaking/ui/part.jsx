@@ -323,3 +323,5 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
 }
 
 export default Part
+
+// Add a preview function for the test( Speaking)
