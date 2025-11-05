@@ -23,7 +23,9 @@ const ListeningTest = () => {
   })
   const [flaggedQuestions, setFlaggedQuestions] = useState([])
   const [isAudioPlaying, setIsAudioPlaying] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(
+    () => localStorage.getItem('listening_test_submitted') === 'true'
+  )
   const { getGlobalData, errorMessage, setErrorMessage, showErrorModal, setShowErrorModal } = useGlobalData()
 
   const [formattedAnswers, setFormattedAnswers] = useState(() => {
@@ -650,7 +652,7 @@ const ListeningTest = () => {
         }
 
         await saveListeningAnswers(updatedFormattedAnswers)
-
+        localStorage.setItem('listening_test_submitted', 'true')
         localStorage.setItem('listening_formatted_answers', JSON.stringify(updatedFormattedAnswers))
 
         localStorage.removeItem(STORAGE_KEY)
