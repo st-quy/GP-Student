@@ -3,7 +3,9 @@ import { ForgotPasswordImg } from '@assets/images/'
 import { useForgotPassword } from '@features/auth/api'
 import { Button, Col, ConfigProvider, Form, Image, Input, Row, Typography } from 'antd'
 import { useNavigate } from 'react-router-dom'
+
 const { Title, Paragraph } = Typography
+
 const ForgotPassword = () => {
   const navigate = useNavigate()
   const { mutate: forgotPasswordFunc, isPending } = useForgotPassword()
