@@ -9,10 +9,26 @@ const EditProfileModal = ({ open, onCancel, onSave, formData, setFormData }) => 
     form.setFieldsValue(formData)
   }, [formData, form])
 
+  // ✅ Hàm validate cho các trường bắt buộc (fix BUG_UP001)
+  const requiredTrimmed = fieldName => [
+    { required: true, message: `${fieldName} is required` },
+    {
+      validator: (_, value) => {
+        if (value && value.trim() === '') {
+          return Promise.reject(new Error(`${fieldName} is required`))
+        }
+        return Promise.resolve()
+      }
+    }
+  ]
+
   const handleUpdate = async () => {
     try {
       const values = await form.validateFields()
-      const updatedData = { ...formData, ...values }
+      const trimmedValues = Object.fromEntries(
+        Object.entries(values).map(([key, val]) => [key, typeof val === 'string' ? val.trim() : val])
+      )
+      const updatedData = { ...formData, ...trimmedValues }
       onSave(updatedData)
     } catch {
       return null
@@ -45,7 +61,7 @@ const EditProfileModal = ({ open, onCancel, onSave, formData, setFormData }) => 
             </span>
           }
           name="firstName"
-          rules={[{ required: true, message: 'First name is required' }]}
+          rules={requiredTrimmed('First name')}
         >
           <Input
             value={formData.firstName}
@@ -61,7 +77,7 @@ const EditProfileModal = ({ open, onCancel, onSave, formData, setFormData }) => 
             </span>
           }
           name="lastName"
-          rules={[{ required: true, message: 'Last name is required' }]}
+          rules={requiredTrimmed('Last name')}
         >
           <Input
             value={formData.lastName}
@@ -77,10 +93,7 @@ const EditProfileModal = ({ open, onCancel, onSave, formData, setFormData }) => 
             </span>
           }
           name="email"
-          rules={[
-            { required: true, message: 'Email is required' },
-            { pattern: EMAIL_REG, message: 'Invalid email format' }
-          ]}
+          rules={[...requiredTrimmed('Email'), { pattern: EMAIL_REG, message: 'Invalid email format' }]}
         >
           <Input
             value={formData.email}
@@ -97,7 +110,7 @@ const EditProfileModal = ({ open, onCancel, onSave, formData, setFormData }) => 
           }
           name="phone"
           rules={[
-            { required: true, message: 'Phone number is required' },
+            ...requiredTrimmed('Phone number'),
             { pattern: PHONE_REG, message: 'Phone number must be 9–10 digits' }
           ]}
         >
@@ -115,7 +128,7 @@ const EditProfileModal = ({ open, onCancel, onSave, formData, setFormData }) => 
             </span>
           }
           name="address"
-          rules={[{ required: true, message: 'Address is required' }]}
+          rules={requiredTrimmed('Address')}
         >
           <Input
             value={formData.address}
