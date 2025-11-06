@@ -21,7 +21,7 @@ const QuestionNavigatorContainer = ({
     const statuses = testData.Parts.map((part, index) => {
       const partQuestions = part.Questions
 
-      // --- LOGIC KIỂM TRA "ALL ANSWERED" ĐẦY ĐỦ ---
+      // --- LOGIC KIỂM TRA "ALL ANSWERED" ĐẦY ĐỦ ---//
       const allAnswered = partQuestions.every(q => {
         const answer = userAnswers[q.ID]
 
