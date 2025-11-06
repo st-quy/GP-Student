@@ -1,6 +1,7 @@
 import axiosInstance from '@shared/config/axios'
 import { ACCESS_TOKEN } from '@shared/lib/constants/auth'
 import { useMutation } from '@tanstack/react-query'
+import { message } from 'antd'
 
 const loginAPI = async ({ email, password }) => {
   const response = await axiosInstance.post(`/users/login`, {
@@ -53,13 +54,10 @@ export const useForgotPassword = () => {
     mutationFn: async params => {
       const { data } = await forgotPasswordAPI(params)
       return data.data
+    },
+    onError({ response }) {
+      message.error(response.data.message)
     }
-    // onSuccess() {
-    //   message.success("Please check your email to reset your password");
-    // },
-    // onError({ response }) {
-    //   message.error(response.data.message);
-    // },
   })
 }
 export const useResetPassword = () => {
