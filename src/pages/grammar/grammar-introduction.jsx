@@ -6,6 +6,7 @@ const GrammarIntroduction = () => {
   const data = useGrammarData()
 
   const onStart = async () => {
+    localStorage.removeItem('isSubmitted')
     navigate('/grammar/test')
   }
 

@@ -53,7 +53,10 @@ export const useForgotPassword = () => {
   return useMutation({
     mutationFn: async params => {
       const { data } = await forgotPasswordAPI(params)
-      return data.data
+      return data
+    },
+    onSuccess: data => {
+      message.success(data?.message || 'Password reset link sent to your email')
     },
     onError({ response }) {
       message.error(response.data.message)
