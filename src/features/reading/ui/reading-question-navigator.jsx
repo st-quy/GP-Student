@@ -16,6 +16,7 @@ const QuestionNavigatorContainer = ({
   const [isNavigatorOpen, setIsNavigatorOpen] = useState(false)
   const [partStatuses, setPartStatuses] = useState([])
   const [isPopupOpen, setIsPopupOpen] = useState(false)
+  const [isWarningPopupOpen, setIsWarningPopupOpen] = useState(false)
 
   useEffect(() => {
     const statuses = testData.Parts.map((part, index) => {
@@ -160,6 +161,10 @@ const QuestionNavigatorContainer = ({
 
   const handleAutoSubmit = () => {
     setIsPopupOpen(true)
+  }
+
+  const handleOneMinuteWarning = () => {
+    setIsWarningPopupOpen(true)
   }
 
   const handleTimeoutSubmit = () => {
