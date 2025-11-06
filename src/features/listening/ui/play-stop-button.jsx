@@ -1,6 +1,6 @@
-import { PlayCircleOutlined, PauseCircleOutlined } from '@ant-design/icons'
-import { Button } from 'antd'
-import { useState, useRef, useEffect } from 'react'
+import { PauseCircleOutlined, PlayCircleOutlined } from '@ant-design/icons'
+import { Button, Modal } from 'antd' 
+import { useEffect, useRef, useState } from 'react'
 
 const STORAGE_KEY = 'listening_played_questions'
 
@@ -17,6 +17,7 @@ const playedQuestions = getPlayedQuestions()
 
 const AudioPlayer = ({ src, id, questionId, playAttempt, onPlayingChange, isOtherPlaying, setIsOtherPlaying }) => {
   const [isPlaying, setIsPlaying] = useState(false)
+  const [isModalVisible, setIsModalVisible] = useState(false) 
   const audioRef = useRef(null)
   const isPlayingRef = useRef(false)
 
@@ -41,6 +42,24 @@ const AudioPlayer = ({ src, id, questionId, playAttempt, onPlayingChange, isOthe
     }
   }, [isOtherPlaying])
 
+
+  const handleConfirmStop = () => {
+    const audio = audioRef.current
+    if (audio) {
+      audio.pause()
+      setIsPlaying(false)
+      isPlayingRef.current = false
+      setIsOtherPlaying(false)
+    }
+    setIsModalVisible(false)
+  }
+
+  
+  const handleCancelStop = () => {
+    setIsModalVisible(false)
+  }
+
+ 
   const handlePlayPause = () => {
     const audio = audioRef.current
     if (!audio) {
@@ -48,11 +67,10 @@ const AudioPlayer = ({ src, id, questionId, playAttempt, onPlayingChange, isOthe
     }
 
     if (isPlaying) {
-      audio.pause()
-      setIsPlaying(false)
-      isPlayingRef.current = false
-      setIsOtherPlaying(false)
+     
+      setIsModalVisible(true)
     } else if (!playedQuestions[questionId]?.[playAttempt]) {
+      
       setIsOtherPlaying(true)
       audio
         .play()
@@ -89,6 +107,19 @@ const AudioPlayer = ({ src, id, questionId, playAttempt, onPlayingChange, isOthe
       />
       <span>Play/Stop</span>
       <audio ref={audioRef} src={src} onEnded={handleEnded} data-id={id} />
+
+      
+      <Modal
+        title="Confirm stop Audio"
+        open={isModalVisible}
+        onOk={handleConfirmStop}
+        onCancel={handleCancelStop}
+        okText="Stop"
+        cancelText="Cancel"
+        okButtonProps={{ danger: true }}
+      >
+        <p>Are you sure you want to stop? You will not be able to play this audio again.</p>
+      </Modal>
     </div>
   )
 }
