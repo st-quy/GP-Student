@@ -15,7 +15,7 @@ const { Title, Text } = Typography
 const LoginPage = () => {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
-  const [loginError, setLoginError] = useState('')
+  const [loginError, setLoginError] = useState({})
   const [loginSuccess, setLoginSuccess] = useState('')
   const [passwordTouched, setPasswordTouched] = useState(false)
   const navigate = useNavigate()
@@ -32,7 +32,7 @@ const LoginPage = () => {
 
   const onFinish = async values => {
     setLoading(true)
-    setLoginError('')
+    setLoginError({})
     setLoginSuccess('')
 
     try {
@@ -57,8 +57,16 @@ const LoginPage = () => {
       } else {
         setLoginError('Login failed. Please try again.')
       }
-    } catch {
-      setLoginError('Invalid email or password')
+    } catch (error) {
+      const message = error.response?.data?.message
+      setLoginError(message)
+      if (message.toLowerCase().includes('email')) {
+        setLoginError({ email: message })
+      } else if (message.toLowerCase().includes('password')) {
+        setLoginError({ password: message })
+      } else {
+        setLoginError({ general: message })
+      }
     } finally {
       setLoading(false)
     }
@@ -96,27 +104,37 @@ const LoginPage = () => {
               requiredMark={false}
               className="flex flex-col gap-4 sm:gap-5"
             >
-              <Form.Item
-                label={
-                  <Text strong className="!text-sm">
-                    Email <span className="text-red-500">*</span>
-                  </Text>
-                }
-                name="email"
-                rules={[
-                  {
-                    required: true,
-                    message: 'Email is required'
+              <div>
+                <Form.Item
+                  label={
+                    <Text strong className="!text-sm">
+                      Email <span className="text-red-500">*</span>
+                    </Text>
                   }
-                ]}
-                className="!mb-1"
-              >
-                <Input
-                  placeholder="Enter your email"
-                  className="!h-11 !rounded-md !border !border-gray-200 !bg-gray-50 !px-4 !py-2.5 !text-base"
-                />
-              </Form.Item>
-
+                  name="email"
+                  rules={[
+                    {
+                      required: true,
+                      message: 'Email is required'
+                    },
+                    {
+                      type: 'email',
+                      message: 'Please enter a valid email'
+                    }
+                  ]}
+                  className="!mb-1"
+                >
+                  <Input
+                    placeholder="Enter your email"
+                    className="!h-11 !rounded-md !border !border-gray-200 !bg-gray-50 !px-4 !py-2.5 !text-base"
+                  />
+                </Form.Item>
+                {loginError.email && (
+                  <Text type="danger" className="!text-sm">
+                    {loginError.email}
+                  </Text>
+                )}
+              </div>
               <div className="space-y-1">
                 <Form.Item
                   label={
@@ -125,6 +143,12 @@ const LoginPage = () => {
                     </Text>
                   }
                   name="password"
+                  rules={[
+                    {
+                      required: true,
+                      message: 'Password is required'
+                    }
+                  ]}
                   className="!mb-0"
                   validateStatus={showPasswordError || loginError ? 'error' : loginSuccess ? 'success' : ''}
                 >
@@ -133,7 +157,7 @@ const LoginPage = () => {
                     onChange={handlePasswordChange}
                     className={`!h-11 !rounded-md !border !bg-gray-50 !px-4 !py-2.5 !text-base ${
                       showPasswordError || loginError
-                        ? '!border-red-500'
+                        ? '!border-red- 500'
                         : loginSuccess
                           ? '!border-green-500'
                           : '!border-gray-200'
@@ -154,16 +178,18 @@ const LoginPage = () => {
                     }
                   />
                 </Form.Item>
-                {showPasswordError && (
+
+                {loginError.password && (
                   <Text type="danger" className="!text-sm">
-                    Password is required
+                    {loginError.password}
                   </Text>
                 )}
-                {loginError && !showPasswordError && (
+                {loginError.general && (
                   <Text type="danger" className="!text-sm">
-                    {loginError}
+                    {loginError.general}
                   </Text>
                 )}
+
                 {loginSuccess && (
                   <Space size={4} className="!text-sm !text-green-500">
                     <CheckCircleOutlined />
