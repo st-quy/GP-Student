@@ -59,7 +59,10 @@ const TimeRemaining = ({ duration, label = 'Time remaining', onAutoSubmit }) => 
           localStorage.removeItem(storageKey)
           onAutoSubmit?.()
         }
-
+        // Cảnh báo khi còn 1 phút
+        if (newTime === 60) {
+          alert('Only 1 minute remaining!')
+        }
         return newTime
       })
     }, 1000)
