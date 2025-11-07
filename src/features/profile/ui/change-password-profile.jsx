@@ -23,7 +23,9 @@ const ChangePasswordModal = ({ open, onCancel, onSubmit, userId }) => {
       message.success('Password changed successfully')
       handleClose()
     } catch (error) {
-      if (error.inner) {
+      if (error.response?.data?.message?.includes('Invalid old password')) {
+        message.error('Current password is incorrect')
+      } else if (error.inner) {
         error.inner.forEach(err => {
           message.error(err.message)
         })
@@ -85,15 +87,24 @@ const ChangePasswordModal = ({ open, onCancel, onSubmit, userId }) => {
         <Form.Item
           label={<span>New Password</span>}
           name="newPassword"
+          dependencies={['oldPassword']}
+          hasFeedback
           rules={[
             { required: true, message: 'Please input password!' },
             {
               pattern: PASSWORD_REG,
               message:
                 'Password more than 8 characters, at least one uppercase letter, one lowercase letter, one number and one special character.'
-            }
+            },
+            ({ getFieldValue }) => ({
+              validator(_, value) {
+                if (value && value === getFieldValue('oldPassword')) {
+                  return Promise.reject(new Error('New password must be different from current password'))
+                }
+                return Promise.resolve()
+              }
+            })
           ]}
-          hasFeedback
         >
           <Input.Password className="h-11 rounded-lg border-[#D1D5DB] bg-[#F9FAFB] px-3" />
         </Form.Item>
