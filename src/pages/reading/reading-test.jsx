@@ -38,8 +38,16 @@ const formatMultipleChoiceQuestion = question => ({
 })
 
 const ReadingTest = () => {
-  const [isSubmitted, setIsSubmitted] = useState(false)
-
+  // THÊM TRẠNG THÁI NỘP BÀI
+  const [isSubmitted, setIsSubmitted] = useState(() => {
+  try {
+    const savedStatus = localStorage.getItem('readingSubmitted')
+    return savedStatus ? JSON.parse(savedStatus) : false
+  } catch {
+    return false
+  }
+})
+// END THÊM TRẠNG THÁI NỘP BÀI
   const [userAnswers, setUserAnswers] = useState(() => {
     try {
       const savedAnswers = localStorage.getItem('readingAnswers')
@@ -252,6 +260,8 @@ const ReadingTest = () => {
       localStorage.removeItem('readingAnswers')
       localStorage.removeItem('flaggedQuestions')
       localStorage.removeItem('partFlaggedStates')
+      // THÊM DÒNG NÀY ĐỂ LƯU TRẠNG THÁI NỘP BÀI
+      localStorage.setItem('readingSubmitted', JSON.stringify(true))
 
       setIsSubmitted(true)
       localStorage.setItem('current_skill', 'writing')

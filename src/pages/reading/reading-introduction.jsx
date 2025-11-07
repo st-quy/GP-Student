@@ -10,6 +10,10 @@ const ReadingIntroduction = () => {
 
   const onStart = async () => {
     await enableFullScreen()
+    localStorage.removeItem('readingSubmitted') // Đảm bảo trạng thái "đã nộp bài" được đặt lại
+    localStorage.removeItem('readingAnswers')
+    localStorage.removeItem('flaggedQuestions')
+    localStorage.removeItem('partFlaggedStates')
     navigate('/reading/test')
   }
 
