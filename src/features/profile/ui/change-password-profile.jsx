@@ -1,8 +1,7 @@
-import { PASSWORD_REG } from '@shared/lib/constants/reg'
+import { PASSWORD_RULES } from '@shared/lib/constants/reg'
 import { Button, Form, Input, message, Modal } from 'antd'
 import { useState } from 'react'
 import * as Yup from 'yup'
-
 const passwordValidationSchema = Yup.object().shape({
   oldPassword: Yup.string().required('Old password is required'),
   newPassword: Yup.string().min(6, 'Password must be at least 6 characters').required('New password is required'),
@@ -10,11 +9,9 @@ const passwordValidationSchema = Yup.object().shape({
     .oneOf([Yup.ref('newPassword'), null], 'Passwords must match')
     .required('Confirm password is required')
 })
-
 const ChangePasswordModal = ({ open, onCancel, onSubmit, userId }) => {
   const [form] = Form.useForm()
   const [passwordData] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' })
-
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
@@ -32,12 +29,10 @@ const ChangePasswordModal = ({ open, onCancel, onSubmit, userId }) => {
       }
     }
   }
-
   const handleClose = () => {
     form.resetFields()
     onCancel()
   }
-
   return (
     <Modal
       title={<div className="text-center text-2xl font-semibold">Change Password</div>}
@@ -81,23 +76,29 @@ const ChangePasswordModal = ({ open, onCancel, onSubmit, userId }) => {
         >
           <Input.Password className="h-11 rounded-lg border-[#D1D5DB] bg-[#F9FAFB] px-3" />
         </Form.Item>
-
         <Form.Item
           label={<span>New Password</span>}
           name="newPassword"
+          dependencies={['confirmPassword']}
           rules={[
-            { required: true, message: 'Please input password!' },
             {
-              pattern: PASSWORD_REG,
-              message:
-                'Password more than 8 characters, at least one uppercase letter, one lowercase letter, one number and one special character.'
+              validator: (_, value) => {
+                if (!value) {
+                  return Promise.resolve()
+                }
+                const failedRules = PASSWORD_RULES.filter(rule => !rule.regex.test(value))
+                if (failedRules.length > 0) {
+                  const messages = failedRules.map(rule => `• ${rule.message}`).join('\n')
+                  return Promise.reject(new Error(messages))
+                }
+                return Promise.resolve()
+              }
             }
           ]}
           hasFeedback
         >
           <Input.Password className="h-11 rounded-lg border-[#D1D5DB] bg-[#F9FAFB] px-3" />
         </Form.Item>
-
         <Form.Item
           label={<span>Confirm Password</span>}
           name="confirmPassword"
@@ -110,6 +111,7 @@ const ChangePasswordModal = ({ open, onCancel, onSubmit, userId }) => {
                 if (!value || getFieldValue('newPassword') === value) {
                   return Promise.resolve()
                 }
+
                 return Promise.reject(new Error('Passwords do not match'))
               }
             })
@@ -121,5 +123,4 @@ const ChangePasswordModal = ({ open, onCancel, onSubmit, userId }) => {
     </Modal>
   )
 }
-
 export default ChangePasswordModal
