@@ -150,7 +150,9 @@ const LoginPage = () => {
                     }
                   ]}
                   className="!mb-0"
-                  validateStatus={showPasswordError || loginError ? 'error' : loginSuccess ? 'success' : ''}
+                  validateStatus={
+                    (passwordTouched && !password) || loginError.password ? 'error' : loginSuccess ? 'success' : ''
+                  }
                 >
                   <Input.Password
                     placeholder="••••••••••"
