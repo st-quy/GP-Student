@@ -38,7 +38,15 @@ const formatMultipleChoiceQuestion = question => ({
 })
 
 const ReadingTest = () => {
-  const [isSubmitted, setIsSubmitted] = useState(false)
+  // State to track if the test has been submitted
+  const [isSubmitted, setIsSubmitted] = useState(() => {
+  try {
+    const savedStatus = localStorage.getItem('readingSubmitted')
+    return savedStatus ? JSON.parse(savedStatus) : false
+  } catch {
+    return false
+  }
+})// Important to keep the submission status persistent
 
   const [userAnswers, setUserAnswers] = useState(() => {
     try {
@@ -252,6 +260,9 @@ const ReadingTest = () => {
       localStorage.removeItem('readingAnswers')
       localStorage.removeItem('flaggedQuestions')
       localStorage.removeItem('partFlaggedStates')
+
+      localStorage.setItem('readingSubmitted', JSON.stringify(true))
+      // Mark as submitted
 
       setIsSubmitted(true)
       localStorage.setItem('current_skill', 'writing')
