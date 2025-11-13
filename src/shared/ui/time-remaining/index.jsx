@@ -1,10 +1,11 @@
 import { memo, useEffect, useState, useRef } from 'react'
-
+import { message } from 'antd' 
 import formatTime from '../../utils/useCountdownTimer'
 
 const TimeRemaining = ({ duration, label = 'Time remaining', onAutoSubmit }) => {
   const storageKey = 'timeRemainingData'
   const timerRef = useRef(null)
+  const warningShownRef = useRef(false) 
 
   const [timeLeft, setTimeLeft] = useState(() => {
     try {
@@ -38,6 +39,14 @@ const TimeRemaining = ({ duration, label = 'Time remaining', onAutoSubmit }) => 
       console.error('Error saving timer data:', error)
     }
   }, [timeLeft, duration])
+
+  
+  useEffect(() => {
+    
+    if (timeLeft === 60 && !warningShownRef.current) {
+      message.warning('You have only 1 minute left to complete the test!', 5) 
+    }
+  }, [timeLeft]) 
 
   // Timer effect
   useEffect(() => {
@@ -78,6 +87,8 @@ const TimeRemaining = ({ duration, label = 'Time remaining', onAutoSubmit }) => 
     if (savedData) {
       const { originalDuration } = JSON.parse(savedData)
       if (originalDuration !== duration) {
+
+        warningShownRef.current = false
         setTimeLeft(duration)
       }
     }

@@ -51,14 +51,54 @@ const TestNavigation = ({
 
   const questionNavigatorValues = getAllQuestions().map((q, idx) => {
     const isQuestionFlagged = flaggedQuestions.includes(q.question.ID)
-
     let isQuestionAnswered = false
+
+    // Logic for 'listening-questions-group' (multiple choice groups)
     if (q.question.Type === 'listening-questions-group' && q.question.GroupContent?.listContent) {
       isQuestionAnswered = q.question.GroupContent.listContent.every(subQuestion => {
         const subQuestionId = `${q.question.ID}-${subQuestion.ID}`
         return userAnswers[subQuestionId] !== undefined
       })
-    } else {
+    }
+    // UPDATED LOGIC: Check for both 'dropdown-list' and 'matching' types
+    else if (q.question.Type === 'dropdown-list' || q.question.Type === 'matching') {
+      const answer = userAnswers[q.question.ID]
+      let totalItems = 0
+      let answeredItems = 0
+
+      try {
+        // Parse AnswerContent to find total number of dropdowns
+        const answerContent =
+          typeof q.question.AnswerContent === 'string'
+            ? JSON.parse(q.question.AnswerContent)
+            : q.question.AnswerContent
+
+        if (answerContent.leftItems) {
+          // This handles "Speaker A/B/C" (matching) style
+          totalItems = answerContent.leftItems.length
+        } else if (answerContent.options && Array.isArray(answerContent.options)) {
+          // This handles fill-in-the-blank (paragraph) style
+          totalItems = answerContent.options.length
+        }
+      } catch (e) {
+        console.error('Error processing dropdown/matching question for navigator:', e)
+      }
+
+      // Check how many items have a selected value
+      if (answer && answer.answerText && Array.isArray(answer.answerText)) {
+        answeredItems = answer.answerText.filter(item => item.value && item.value !== '').length
+      }
+
+      if (totalItems > 0) {
+        // Only mark as answered if all items are answered
+        isQuestionAnswered = answeredItems === totalItems
+      } else {
+        // Fallback for simple questions or if parsing failed
+        isQuestionAnswered = answer !== undefined
+      }
+    }
+    // Logic for simple multiple choice
+    else {
       isQuestionAnswered = userAnswers[q.question.ID] !== undefined
     }
 

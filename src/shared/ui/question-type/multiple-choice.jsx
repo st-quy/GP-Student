@@ -3,7 +3,15 @@ import { Typography } from 'antd'
 import { useState, useMemo } from 'react'
 const { Text } = Typography
 
-const MultipleChoice = ({ questionData, userAnswer, setUserAnswer, onSubmit, className = '', setUserAnswerSubmit }) => {
+const MultipleChoice = ({
+  questionData,
+  userAnswer,
+  setUserAnswer,
+  onSubmit,
+  className = '',
+  setUserAnswerSubmit,
+  onBeforeAnswer
+}) => {
   const [selectedOption, setSelectedOption] = useState(null)
   const [error, setError] = useState(null)
   const { options, isValid } = useMemo(() => {
@@ -27,6 +35,13 @@ const MultipleChoice = ({ questionData, userAnswer, setUserAnswer, onSubmit, cla
   }, [userAnswer, questionData.ID])
 
   const handleClick = optionValue => {
+    // *** THÊM LOGIC KIỂM TRA ***
+    // Gọi hàm kiểm tra trước khi làm bất cứ điều gì
+    if (onBeforeAnswer && !onBeforeAnswer()) {
+      return // Dừng lại nếu hàm kiểm tra trả về false
+    }
+    // *** KẾT THÚC THAY ĐỔI ***
+
     setSelectedOption(optionValue)
     setUserAnswer(prev => ({
       ...prev,
