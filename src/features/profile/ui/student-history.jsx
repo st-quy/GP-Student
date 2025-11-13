@@ -14,9 +14,17 @@ const StudentHistory = ({ userId }) => {
 
   const { data, isLoading, error } = useStudentHistory(userId)
 
+  const formatDate = iso => {
+    if (!iso) {
+      return ''
+    }
+    const d = new Date(iso)
+    return d.toLocaleDateString('vi-VN')
+  }
+
   const sessionData = (data?.data || []).map(item => ({
     id: item.ID,
-    date: item.Session?.startTime?.split('T')[0] || '',
+    date: formatDate(item.createdAt) || formatDate(item.approvedAt) || formatDate(item.Session?.startTime),
     sessionName: item.Session?.sessionName || '',
     grammarScore: item.GrammarVocab,
     grammarLevel: item.GrammarVocabLevel,
@@ -123,7 +131,7 @@ const StudentHistory = ({ userId }) => {
       align: 'center',
       width: 100,
       render: score => {
-        return <span style={{ fontSize: '16px', fontWeight: '', color: '#000' }}>{score ?? '-'}</span>
+        return <span style={{ fontSize: '16px', color: '#000' }}>{score ?? '-'}</span>
       }
     },
     {
@@ -170,7 +178,6 @@ const StudentHistory = ({ userId }) => {
     >
       <h2 style={{ marginBottom: '24px', fontSize: '24px', fontWeight: 'bold' }}>Session History</h2>
 
-      {/* Filters - Responsive wrap */}
       <div
         style={{
           marginBottom: 24,
