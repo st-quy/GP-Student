@@ -1,7 +1,6 @@
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { defineConfig, loadEnv } from 'vite'
-//test
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // eslint-disable-next-line no-undef
@@ -18,7 +17,7 @@ export default defineConfig(({ mode }) => {
       port: 8080,
       strictPort: true,
       host: true,
-      origin: "http://0.0.0.0:8080",  // allow access from network
+      origin: "http://0.0.0.0:8080",
     },
     resolve: {
       extensions: ['.js', '.jsx', '.json'],
