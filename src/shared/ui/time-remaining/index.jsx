@@ -60,7 +60,7 @@ const TimeRemaining = ({ duration, label = 'Time remaining', onAutoSubmit }) => 
           onAutoSubmit?.()
         }
         // Cảnh báo khi còn 1 phút
-        if (newTime === 60) {
+        if (newTime <= 60) {
           alert('Only 1 minute remaining!')
         }
         return newTime
