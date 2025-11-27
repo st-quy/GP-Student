@@ -13,7 +13,12 @@ import { useEffect, useState, useCallback } from 'react'
 const { Title } = Typography
 const GrammarTest = () => {
   const [isSubmitted, setIsSubmitted] = useState(false)
-
+  useEffect(() => {
+    const submitted = localStorage.getItem('isSubmitted') === 'true'
+    if (submitted) {
+      setIsSubmitted(true)
+    }
+  }, [])
   const { data, isLoading, isError } = useQuery({
     queryKey: ['grammarQuestions'],
     queryFn: async () => {
@@ -64,6 +69,7 @@ const GrammarTest = () => {
   const handleSubmit = useCallback(async () => {
     await submitGrammarTest({ data, answers })
     setIsSubmitted(true)
+    localStorage.setItem('isSubmitted', 'true')
     localStorage.setItem('current_skill', 'reading')
   }, [data, answers])
 

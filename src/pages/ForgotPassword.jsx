@@ -1,56 +1,25 @@
-import { CheckCircleOutlined, MailOutlined } from '@ant-design/icons'
+import { MailOutlined } from '@ant-design/icons'
 import { ForgotPasswordImg } from '@assets/images/'
 import { useForgotPassword } from '@features/auth/api'
-import { Button, Col, ConfigProvider, Form, Image, Input, message, Row, Typography } from 'antd'
+import { Button, Col, ConfigProvider, Form, Image, Input, Row, Typography } from 'antd'
 import { useNavigate } from 'react-router-dom'
+
 const { Title, Paragraph } = Typography
+
 const ForgotPassword = () => {
   const navigate = useNavigate()
-  const [form] = Form.useForm()
-  const { mutate } = useForgotPassword()
-  const validateMessages = {
-    required: 'Please enter your email address',
-    types: {
-      email: 'Please enter a valid email address'
-    }
-  }
-  const handleSubmit = async values => {
-    try {
-      // @ts-ignore
-      mutate(
-        // @ts-ignore
-        { email: values.email.toLowerCase(), host: window.location.origin },
-        {
-          onSuccess: () => {
-            message.success({
-              content: 'Password reset sent to your email',
-              duration: 3,
-              icon: <CheckCircleOutlined style={{ color: '#52c41a' }} />
-            })
-            form.resetFields()
-          },
-          onError: error => {
-            console.error('Reset password error:', error)
-            message.error({
-              content: 'Something went wrong. Please try again.',
-              duration: 3
-            })
-          }
+  const { mutate: forgotPasswordFunc, isPending } = useForgotPassword()
+  const onFinish = values => {
+    forgotPasswordFunc(
+      { ...values, host: window.location.origin },
+      {
+        onSuccess: () => {
+          form.resetFields()
         }
-      )
-    } catch (error) {
-      console.error('Reset password error:', error)
-      message.error({
-        content: 'Something went wrong. Please try again.',
-        duration: 3
-      })
-    }
+      }
+    )
   }
-  const handleKeyPress = e => {
-    if (e.key === 'Enter') {
-      form.submit()
-    }
-  }
+  const [form] = Form.useForm()
   return (
     <ConfigProvider
       theme={{
@@ -80,9 +49,8 @@ const ForgotPassword = () => {
             </div>
             <Form
               form={form}
-              onFinish={handleSubmit}
+              onFinish={onFinish}
               layout="vertical"
-              validateMessages={validateMessages}
               className="w-full space-y-4 sm:space-y-6"
               size="large"
               role="form"
@@ -107,7 +75,6 @@ const ForgotPassword = () => {
                   placeholder="Enter your email"
                   autoComplete="email"
                   className="h-12 rounded-lg bg-gray-50 text-xs placeholder:text-xs sm:text-sm sm:placeholder:text-sm"
-                  onKeyPress={handleKeyPress}
                   aria-required="true"
                   aria-invalid={form.getFieldError('email').length > 0}
                 />
@@ -124,6 +91,7 @@ const ForgotPassword = () => {
                       boxShadow: 'none',
                       border: 'none'
                     }}
+                    loading={isPending}
                   >
                     Reset Password
                   </Button>

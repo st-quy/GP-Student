@@ -9,7 +9,10 @@ const validationSchema = yup.object().shape({
   selectedOption: yup.string().required('Please select an answer')
 })
 
-const DropdownQuestion = ({ questionData, userAnswer, setUserAnswer, className = '' }) => {
+// *** BẮT ĐẦU THAY ĐỔI ***
+// 1. Thêm 'onBeforeAnswer' vào props
+const DropdownQuestion = ({ questionData, userAnswer, setUserAnswer, className = '', onBeforeAnswer }) => {
+  // *** KẾT THÚC THAY ĐỔI 1 ***
   dropdownQuestionSchema.validateSync(questionData)
   const [selectedOptions, setSelectedOptions] = useState({})
   const [error, setError] = useState({})
@@ -85,6 +88,13 @@ const DropdownQuestion = ({ questionData, userAnswer, setUserAnswer, className =
   }, [memoizedProcessedData, userAnswer])
 
   const handleSelectChange = async (key, value) => {
+    // *** BẮT ĐẦU THAY ĐỔI ***
+    // 2. Thêm hàm kiểm tra
+    if (onBeforeAnswer && !onBeforeAnswer()) {
+      return // Chặn nếu hàm onBeforeAnswer trả về false
+    }
+    // *** KẾT THÚC THAY ĐỔI 2 ***
+
     const updatedAnswers = { ...selectedOptions }
 
     Object.keys(updatedAnswers).forEach(k => {

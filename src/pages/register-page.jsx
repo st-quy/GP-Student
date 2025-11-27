@@ -1,5 +1,5 @@
 import { EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons'
-import { EMAIL_REG, PASSWORD_REG } from '@shared/lib/constants/reg'
+import { EMAIL_REG, PASSWORD_RULES } from '@shared/lib/constants/reg'
 import { useRegister } from '@shared/lib/hooks/useAuthUsers'
 import { Form, Input, Button, Typography, Space, Row, Col, message } from 'antd'
 import { useState } from 'react'
@@ -238,9 +238,17 @@ const RegisterPage = () => {
                     rules={[
                       { required: true, message: 'Password is required' },
                       {
-                        pattern: PASSWORD_REG,
-                        message:
-                          'Password must contain at least one uppercase letter, one lowercase letter, one number and one special character'
+                        validator: (_, value) => {
+                          if (!value) {
+                            return Promise.resolve()
+                          }
+                          const failedRules = PASSWORD_RULES.filter(rule => !rule.regex.test(value))
+                          if (failedRules.length > 0) {
+                            const messages = failedRules.map(rule => `• ${rule.message}`).join('\n')
+                            return Promise.reject(new Error(messages))
+                          }
+                          return Promise.resolve()
+                        }
                       }
                     ]}
                     hasFeedback
