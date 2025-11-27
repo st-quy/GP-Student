@@ -3,6 +3,7 @@ import { SearchOutlined } from '@ant-design/icons'
 import { useStudentHistory } from '@features/profile/hooks/useProfile'
 import { Empty, Input, Select, Table } from 'antd'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 
 const { Option } = Select
 
@@ -74,7 +75,21 @@ const StudentHistory = ({ userId }) => {
       key: 'sessionName',
       align: 'center',
       width: 180,
-      render: text => <span style={{ color: '#1890ff', fontWeight: 500 }}>{text}</span>
+      render: (text, record) => (
+        <Link
+          to={`/result/${record.id}`}
+          style={{
+            color: '#1890ff',
+            fontWeight: 600,
+            textDecoration: 'underline',
+            cursor: 'pointer',
+            display: 'block', // Giúp vùng bấm rộng hơn
+            width: '100%'
+          }}
+        >
+          {text}
+        </Link>
+      )
     },
     {
       title: 'Grammar & Vocab',
