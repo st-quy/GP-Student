@@ -727,8 +727,11 @@ const ListeningTest = () => {
       const answerContent =
         typeof question.AnswerContent === 'string' ? JSON.parse(question.AnswerContent) : question.AnswerContent
 
-      if (question.Type === 'listening-questions-group' && question.GroupContent?.listContent) {
-        const formattedQuestions = question.GroupContent.listContent.map(subQuestion => {
+      if (
+        question.Type === 'listening-questions-group' &&
+        question.AnswerContent.groupContent?.listContent.length > 0
+      ) {
+        const formattedQuestions = question.AnswerContent.groupContent?.listContent.map(subQuestion => {
           const options = subQuestion.options.map((option, index) => ({
             key: String.fromCharCode(65 + index),
             value: option

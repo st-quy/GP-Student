@@ -13,9 +13,7 @@ const fetchTopicData = async partNumber => {
     })
 
     const parts = response.data.Parts || []
-    const selectedPart = parts.find(
-      part => part.Content.toLowerCase().match(/part \d+/)?.[0] === `PART ${partNumber}`.toLowerCase()
-    )
+    const selectedPart = parts.find(part => part.Sequence === partNumber)
 
     return selectedPart || null
   } catch (error) {

@@ -3,7 +3,7 @@ import { Button } from 'antd'
 const PartIntro = ({ data, onStartPart }) => {
   const getPartInfo = content => {
     switch (content) {
-      case 'PART 1':
+      case 1:
         return {
           title: 'Part 1: Personal Information',
           description: 'You will be asked to answer questions about yourself and your experiences.',
@@ -18,7 +18,7 @@ const PartIntro = ({ data, onStartPart }) => {
             'Try to give complete answers'
           ]
         }
-      case 'PART 2':
+      case 2:
         return {
           title: 'Part 2: Picture Description',
           description: 'You will be shown a picture and asked to describe it in detail.',
@@ -33,7 +33,7 @@ const PartIntro = ({ data, onStartPart }) => {
             'Use descriptive language'
           ]
         }
-      case 'PART 3':
+      case 3:
         return {
           title: 'Part 3: Picture Discussion',
           description: 'You will be shown a picture and asked to answer related questions.',
@@ -48,7 +48,7 @@ const PartIntro = ({ data, onStartPart }) => {
             'Answer the questions based on the picture'
           ]
         }
-      case 'PART 4':
+      case 4:
         return {
           title: 'Part 4: Topic Discussion',
           description: 'You will be asked to discuss a topic in detail with multiple questions.',
@@ -76,10 +76,8 @@ const PartIntro = ({ data, onStartPart }) => {
         }
     }
   }
-  const rawPart = data?.Content?.toLowerCase()
-    .match(/part \d+/)?.[0]
-    .toUpperCase()
-  const info = getPartInfo(rawPart)
+
+  const info = getPartInfo(data.Sequence)
 
   return (
     <div className="flex h-screen w-full items-center justify-center bg-gray-50 p-8">
@@ -90,7 +88,7 @@ const PartIntro = ({ data, onStartPart }) => {
         </div>
 
         <div className="mb-8 grid grid-cols-3 gap-6 rounded-xl border border-gray-200 bg-white p-6 shadow-[0_4px_12px_rgb(0,0,0,0.05)]">
-          {rawPart === 'PART 4' ? (
+          {data.Sequence === 4 ? (
             <>
               <div className="text-center">
                 <div className="text-sm font-medium text-gray-500">Reading Time</div>
