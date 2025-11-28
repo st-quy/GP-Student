@@ -8,7 +8,7 @@ import DropdownQuestion from '@shared/ui/question-type/dropdown-question'
 import MultipleChoice from '@shared/ui/question-type/multiple-choice'
 import NextScreen from '@shared/ui/submission/next-screen'
 import { useQuery } from '@tanstack/react-query'
-import { Spin, Alert, Typography, Modal } from 'antd'
+import { Spin, Alert, Typography, Modal, message } from 'antd'
 import { useState, useMemo, useEffect, useCallback } from 'react'
 const { Title } = Typography
 
@@ -23,7 +23,9 @@ const ListeningTest = () => {
   })
   const [flaggedQuestions, setFlaggedQuestions] = useState([])
   const [isAudioPlaying, setIsAudioPlaying] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(
+    () => localStorage.getItem('listening_test_submitted') === 'true'
+  )
   const { getGlobalData, errorMessage, setErrorMessage, showErrorModal, setShowErrorModal } = useGlobalData()
 
   const [formattedAnswers, setFormattedAnswers] = useState(() => {
@@ -416,12 +418,12 @@ const ListeningTest = () => {
     return groupedQuestions.length
   }
 
-  const getCurrentGroup = () => {
+  const getCurrentGroup = useCallback(() => {
     if (!groupedQuestions.length) {
       return null
     }
     return groupedQuestions[currentPartIndex] || null
-  }
+  }, [groupedQuestions, currentPartIndex])
 
   const getCurrentQuestion = () => {
     const group = getCurrentGroup()
@@ -437,6 +439,21 @@ const ListeningTest = () => {
     }
     return currentPartIndex
   }
+
+  const checkAudioPlayed = useCallback(() => {
+    const audioQuestionId = getCurrentGroup()?.questions[0]?.ID
+    if (!audioQuestionId) return true // Không chặn nếu không tìm thấy ID audio (lỗi an toàn)
+
+    const playedQuestions = JSON.parse(localStorage.getItem('listening_played_questions') || '{}')
+    // Kiểm tra xem 1 trong 2 lần nghe (1 hoặc 2) đã được bấm hay chưa
+    const hasPlayed = playedQuestions[audioQuestionId] && (playedQuestions[audioQuestionId][1] || playedQuestions[audioQuestionId][2])
+
+    if (!hasPlayed) {
+      message.warning('Please listen to the Audio before choosing the answer.')
+      return false
+    }
+    return true
+  }, [getCurrentGroup])
 
   const goToNext = () => {
     if (isAudioPlaying) {
@@ -470,6 +487,13 @@ const ListeningTest = () => {
   }
 
   const handleAnswerSubmit = (questionId, answer) => {
+    // *** BẮT ĐẦU THAY ĐỔI ***
+    // Xóa logic kiểm tra ở đây, vì nó đã được chuyển vào component con
+    // if (!checkAudioPlayed()) {
+    //   return
+    // }
+    // *** KẾT THÚC THAY ĐỔI ***
+
     setUserAnswers(prev => {
       if (typeof answer === 'object' && !Array.isArray(answer)) {
         const existingAnswer = prev[questionId] || {}
@@ -650,7 +674,7 @@ const ListeningTest = () => {
         }
 
         await saveListeningAnswers(updatedFormattedAnswers)
-
+        localStorage.setItem('listening_test_submitted', 'true')
         localStorage.setItem('listening_formatted_answers', JSON.stringify(updatedFormattedAnswers))
 
         localStorage.removeItem(STORAGE_KEY)
@@ -911,6 +935,10 @@ const ListeningTest = () => {
                       questionData={subQuestion}
                       userAnswer={userAnswers}
                       setUserAnswer={setUserAnswers}
+                      // *** BẮT ĐẦU THAY ĐỔI ***
+                      // Thêm onBeforeAnswer
+                      onBeforeAnswer={checkAudioPlayed}
+                      // *** KẾT THÚC THAY ĐỔI ***
                       onSubmit={answer => handleAnswerSubmit(subQuestion.ID, answer)}
                       className="mt-6"
                       setUserAnswerSubmit={() => {}}
@@ -929,6 +957,10 @@ const ListeningTest = () => {
                     questionData={formattedQ}
                     userAnswer={userAnswers}
                     setUserAnswer={setUserAnswers}
+                    // *** BẮT ĐẦU THAY ĐỔI ***
+                    // Thêm onBeforeAnswer
+                    onBeforeAnswer={checkAudioPlayed}
+                    // *** KẾT THÚC THAY ĐỔI ***
                     onSubmit={answer => handleAnswerSubmit(question.ID, answer)}
                     className="z-0 mt-6"
                     setUserAnswerSubmit={() => {}}
@@ -939,6 +971,7 @@ const ListeningTest = () => {
                   questionData={formattedQ}
                   userAnswer={userAnswers}
                   setUserAnswer={setUserAnswers}
+                  onBeforeAnswer={checkAudioPlayed}
                   className="z-0 mt-6 shadow-none"
                 />
               ) : null}

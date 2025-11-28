@@ -182,17 +182,7 @@ const Profile = () => {
         onCancel={() => setIsPasswordModalOpen(false)}
         userId={auth.user?.userId}
         onSubmit={async (userId, passwordData) => {
-          try {
-            await changePasswordMutation.mutateAsync({ userId, passwordData })
-            refetch()
-            setIsPasswordModalOpen(false)
-          } catch (error) {
-            if (error.response) {
-              message.error(error.response.data.message || 'Failed to change password')
-            } else {
-              message.error('Failed to change password')
-            }
-          }
+          return changePasswordMutation.mutateAsync({ userId, passwordData })
         }}
       />
       <StudentHistory userId={auth.user?.userId} />
