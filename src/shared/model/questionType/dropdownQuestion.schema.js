@@ -45,7 +45,7 @@ export const dropdownQuestionSchema = yup.object({
   Type: yup.string().oneOf(['dropdown-list'], 'Invalid Type').required(),
   AudioKeys: yup.mixed().nullable(),
   ImageKeys: yup.mixed().nullable(),
-  SkillID: uuidSchema,
+  // SkillID: uuidSchema,
   PartID: uuidSchema,
   Content: yup.string().required('Content is required'),
   SubContent: yup.mixed().nullable(),

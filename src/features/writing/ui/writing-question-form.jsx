@@ -26,19 +26,19 @@ const QuestionForm = ({
     }
   }
 
-  const commaIndex = currentPart.SubContent.indexOf(',')
+  const commaIndex = currentPart?.SubContent?.indexOf(',')
 
   // Tìm vị trí dấu chấm cuối cùng (kết thúc nội dung)
-  const lastPeriodIndex = currentPart.SubContent.lastIndexOf('.')
+  const lastPeriodIndex = currentPart?.SubContent?.lastIndexOf('.')
 
   // Cắt phần lời chào
-  const greeting = currentPart.SubContent.slice(0, commaIndex + 1).trim()
+  const greeting = currentPart?.SubContent?.slice(0, commaIndex + 1).trim()
 
   // Cắt phần nội dung từ sau dấu phẩy đến dấu chấm cuối cùng
-  const content = currentPart.SubContent.slice(commaIndex + 1, lastPeriodIndex + 1).trim()
+  const content = currentPart?.SubContent?.slice(commaIndex + 1, lastPeriodIndex + 1).trim()
 
   // Cắt phần chữ ký từ sau dấu chấm cuối cùng
-  const signature = currentPart.SubContent.slice(lastPeriodIndex + 1).trim()
+  const signature = currentPart?.SubContent?.slice(lastPeriodIndex + 1).trim()
 
   return (
     <Form layout="vertical">
@@ -49,7 +49,7 @@ const QuestionForm = ({
             .trim()}
         </Title>
       </div>
-      {currentPart?.SubContent.length > 1 && (
+      {currentPart?.SubContent?.length > 1 && (
         <div className="mb-4 w-full">
           <Typography>
             {greeting}

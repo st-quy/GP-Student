@@ -530,6 +530,7 @@ const ReadingTest = () => {
     if (processedData.type === 'paragraph') {
       const cleanedQuestion = processedData.question.replace(/\s*\([^)]*\)/g, '')
       const hasSlashFormat = currentQuestion.Content.includes('/') && currentQuestion.Content.split('/').length >= 2
+
       return (
         <div className="mx-auto w-full max-w-4xl">
           <div className="whitespace-pre-wrap text-base text-gray-800">

@@ -35,6 +35,7 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
     const [min, sec] = timeStr.split(':').map(Number)
     return min * 60 + sec
   }
+  const isPart4 = data.Sequence === 4
 
   const questions = (data.Questions || []).sort((a, b) => a.Sequence - b.Sequence)
   const totalQuestions = questions.length
@@ -45,7 +46,7 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
       return { read: '00:05', answer: '00:30' }
     } else if (content.includes('part 2') || content.includes('part 3')) {
       return { read: '00:05', answer: '00:45' }
-    } else if (content.includes('part 4')) {
+    } else if (isPart4) {
       return { read: '00:05', answer: '02:00' }
     }
 
@@ -59,7 +60,7 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
   const submitMutation = useMutation({
     mutationFn: submitSpeakingAnswer,
     onSuccess: () => {
-      if ((data.Content || '').toLowerCase().includes('part 4')) {
+      if (isPart4) {
         setSubmitted(true)
       } else if (onNextPart) {
         onNextPart()
@@ -97,7 +98,7 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
           if (prev <= 1) {
             clearInterval(timerRef.current)
             if (phase === 'reading') {
-              if (data.Content?.toLowerCase().startsWith('part 4')) {
+              if (isPart4) {
                 setPhase('preparing')
                 setCountdown(5)
               } else {
@@ -286,7 +287,7 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
         onNextPart={handleNextPart}
         isLastQuestion={currentQuestionIndex === totalQuestions - 1}
         showNavigation={!isRecording && countdown === 0 && phase === 'answering'}
-        isPart4={data.Content?.toLowerCase().startsWith('part 4')}
+        isPart4={isPart4}
         isUploading={isUploading}
         isButtonLoading={isButtonLoading || submitMutation.isPending}
         buttonRef={buttonRef}
@@ -310,7 +311,7 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
           )}
         </div>
 
-        {!data.Content?.toLowerCase().startsWith('part 4') && (
+        {!isPart4 && (
           <div className="mt-4 flex gap-2 lg:mt-8">
             <div className={`h-2 w-2 rounded-full ${currentQuestionIndex === 0 ? 'bg-white' : 'bg-white/30'}`} />
             <div className={`h-2 w-2 rounded-full ${currentQuestionIndex === 1 ? 'bg-white' : 'bg-white/30'}`} />

@@ -139,7 +139,7 @@ const QuestionDisplay = ({
 
                     <div className="flex items-start gap-2 lg:gap-4">
                       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#003087] text-xs font-bold text-white lg:h-8 lg:w-8 lg:text-sm">
-                        {index + 1}
+                        +
                       </div>
                       <p className="text-base leading-relaxed text-gray-800 lg:text-xl">{question.Content}</p>
                     </div>
