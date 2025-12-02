@@ -38,8 +38,8 @@ const WritingTest = () => {
 
   const updateWordCounts = updatedAnswers => {
     const newWordCounts = {}
-    if (data?.Parts) {
-      data.Parts.forEach(part => {
+    if (data?.Sections?.[0]?.Parts) {
+      data?.Sections?.[0]?.Parts.forEach(part => {
         part.Questions.forEach((_, index) => {
           const fieldName = `answer-${part.ID}-${index}`
           newWordCounts[fieldName] = countWords(updatedAnswers[fieldName] || '')
@@ -91,11 +91,11 @@ const WritingTest = () => {
   if (isError) {
     return <div className="text-center text-red-500">Error fetching data</div>
   }
-  if (!data || !data.Parts || data.Parts.length === 0) {
+  if (!data || !data?.Sections?.[0]?.Parts || data?.Sections?.[0]?.Parts.length === 0) {
     return <div className="text-center text-gray-500">No test data available</div>
   }
 
-  const currentPart = data.Parts[currentPartIndex]
+  const currentPart = data?.Sections?.[0]?.Parts[currentPartIndex]
   const partNumber = parseInt(currentPart.Content.match(/Part (\d+)/)?.[1]) || 0
 
   return (
@@ -107,7 +107,7 @@ const WritingTest = () => {
       <Card className="mb-32">
         <div className="mb-4 flex w-full items-center justify-between">
           <Title level={4} className="text-l mb-5 font-semibold">
-            Question {currentPartIndex + 1} of {data.Parts.length}
+            Question {currentPartIndex + 1} of {data?.Sections?.[0]?.Parts.length}
           </Title>
           <Button
             icon={flaggedParts[currentPart.ID] ? <FlagFilled className="text-red-600" /> : <FlagOutlined />}
@@ -142,7 +142,7 @@ const WritingTest = () => {
         handleSubmit={handleSubmit}
       />
       <FooterNavigator
-        totalQuestions={data.Parts.length}
+        totalQuestions={data?.Sections?.[0]?.Parts.length}
         currentQuestion={currentPartIndex}
         setCurrentQuestion={setCurrentPartIndex}
         handleSubmit={handleSubmit}

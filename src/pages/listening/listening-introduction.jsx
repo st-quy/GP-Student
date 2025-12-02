@@ -1,8 +1,8 @@
 import { useListeningData } from '@shared/context/listening-context'
 import { Introduction } from '@shared/ui/introduction'
 import useAntiCheat from '@shared/utils/antiCheat'
-import { useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const ListeningIntroduction = () => {
   const navigate = useNavigate()

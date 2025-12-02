@@ -3,7 +3,7 @@ import { message } from 'antd'
 
 export const submitGrammarTest = async ({ data, answers }) => {
   try {
-    if (!data?.Parts) {
+    if (!data?.Sections?.[0]?.Parts) {
       return
     }
 
@@ -18,7 +18,7 @@ export const submitGrammarTest = async ({ data, answers }) => {
       return
     }
 
-    const allQuestions = data.Parts.flatMap(part => part.Questions || [])
+    const allQuestions = data?.Sections?.[0]?.Parts.flatMap(part => part.Questions || [])
 
     const questionsArray = allQuestions.map(question => {
       const questionId = question.ID

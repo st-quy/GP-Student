@@ -60,7 +60,7 @@ const MicrophoneCheck = () => {
 
   const handleStart = useCallback(async () => {
     await enableFullScreen()
-    navigate('/speaking/test/4')
+    navigate('/speaking/test/1')
   }, [enableFullScreen])
 
   const renderContent = useCallback(() => {

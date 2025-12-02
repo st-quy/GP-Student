@@ -31,7 +31,7 @@ const QuestionNavigatorContainer = ({
           className={`border-black-300 z-1 fixed right-2 h-auto w-60 rounded-lg border bg-white p-2 shadow-lg ${isNavigatorOpen ? 'block' : 'hidden'} bottom-[65%] md:block mdL:bottom-[70%]`}
         >
           <QuestionNavigator
-            values={data.Parts.map(part => {
+            values={data?.Sections?.[0]?.Parts.map(part => {
               const isFlagged = flaggedParts[part.ID]
               const isAnswered = Object.keys(answers).some(
                 key => key.startsWith(`answer-${part.ID}`) && answers[key]?.trim() !== ''
