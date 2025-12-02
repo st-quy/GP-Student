@@ -30,7 +30,7 @@ const QuestionNavigatorContainer = ({
         >
           <TimeRemaining duration={25 * 60} onAutoSubmit={() => setIsPopupOpen(true)} />
           <QuestionNavigator
-            values={data.Parts.map(question => {
+            values={data?.Parts.map(question => {
               const isFlagged = flaggedQuestions[`answer-${question.ID}`] || false
               let isAnswered = false
 

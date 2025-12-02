@@ -18,11 +18,15 @@ export const fetchGrammarTestDetails = async () => {
       throw new Error('No data received from server')
     }
 
-    if (!response.data.Parts || !Array.isArray(response.data.Parts) || response.data.Parts.length === 0) {
+    if (
+      !response.data?.Sections?.[0]?.Parts ||
+      !Array.isArray(response.data?.Sections?.[0]?.Parts) ||
+      response.data?.Sections?.[0]?.Parts.length === 0
+    ) {
       throw new Error('No grammar test parts available')
     }
 
-    const hasQuestions = response.data.Parts.every(
+    const hasQuestions = response.data?.Sections?.[0]?.Parts.every(
       part => part.Questions && Array.isArray(part.Questions) && part.Questions.length > 0
     )
 
@@ -30,8 +34,8 @@ export const fetchGrammarTestDetails = async () => {
       throw new Error('Some parts are missing questions')
     }
 
-    if (response.data.Parts) {
-      response.data.Parts.forEach(part => {
+    if (response.data?.Sections?.[0]?.Parts) {
+      response.data?.Sections?.[0]?.Parts.forEach(part => {
         if (part.Questions && Array.isArray(part.Questions)) {
           part.Questions.forEach(question => {
             if (question.Content) {

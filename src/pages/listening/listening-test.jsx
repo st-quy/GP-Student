@@ -1,3 +1,4 @@
+/* eslint-disable no-unsafe-optional-chaining */
 import { ExclamationCircleOutlined } from '@ant-design/icons'
 import { ListeningSubmission } from '@assets/images'
 import { fetchListeningTestDetails, saveListeningAnswers } from '@features/listening/api'
@@ -23,9 +24,7 @@ const ListeningTest = () => {
   })
   const [flaggedQuestions, setFlaggedQuestions] = useState([])
   const [isAudioPlaying, setIsAudioPlaying] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(
-    () => localStorage.getItem('listening_test_submitted') === 'true'
-  )
+  const [isSubmitted, setIsSubmitted] = useState(() => localStorage.getItem('listening_test_submitted') === 'true')
   const { getGlobalData, errorMessage, setErrorMessage, showErrorModal, setShowErrorModal } = useGlobalData()
 
   const [formattedAnswers, setFormattedAnswers] = useState(() => {
@@ -73,7 +72,7 @@ const ListeningTest = () => {
   })
 
   useEffect(() => {
-    if (testData?.Parts) {
+    if (testData?.Sections?.[0]?.Parts) {
       const globalData = getGlobalData()
       if (!globalData) {
         return
@@ -95,7 +94,7 @@ const ListeningTest = () => {
 
       const newQuestions = []
 
-      testData.Parts.forEach(part => {
+      testData?.Sections?.[0]?.Parts.forEach(part => {
         part.Questions.forEach(question => {
           if (question.Type === 'listening-questions-group' && question.GroupContent?.listContent) {
             const parentId = question.ID
@@ -155,8 +154,8 @@ const ListeningTest = () => {
 
         dropdownListQuestions.forEach(([id, answer]) => {
           let questionContent = null
-          if (testData?.Parts) {
-            for (const part of testData.Parts) {
+          if (testData?.Sections?.[0]?.Parts) {
+            for (const part of testData?.Sections?.[0]?.Parts) {
               for (const q of part.Questions) {
                 if (q.ID === id) {
                   questionContent = q.Content
@@ -223,8 +222,8 @@ const ListeningTest = () => {
             }
 
             let questionContent = null
-            if (testData?.Parts) {
-              for (const part of testData.Parts) {
+            if (testData?.Sections?.[0]?.Parts) {
+              for (const part of testData?.Sections?.[0]?.Parts) {
                 for (const q of part.Questions) {
                   if (q.ID === q.questionId) {
                     questionContent = q.Content
@@ -265,13 +264,13 @@ const ListeningTest = () => {
   }, [userAnswers, formattedAnswers.questions, testData])
 
   useEffect(() => {
-    if (!testData?.Parts) {
+    if (!testData?.Sections?.[0]?.Parts) {
       return
     }
 
     const listeningGroupQuestions = []
 
-    testData.Parts.forEach(part => {
+    testData?.Sections?.[0]?.Parts.forEach(part => {
       part.Questions.forEach(question => {
         if (question.Type === 'listening-questions-group' && question.GroupContent?.listContent) {
           const parentId = question.ID
@@ -354,12 +353,12 @@ const ListeningTest = () => {
   }, [userAnswers, testData])
 
   const navigatorQuestions = useMemo(() => {
-    if (!testData?.Parts) {
+    if (!testData?.Sections?.[0]?.Parts) {
       return []
     }
 
     const allQuestions = []
-    testData.Parts.forEach((part, partIndex) => {
+    testData?.Sections?.[0]?.Parts.forEach((part, partIndex) => {
       part.Questions.forEach(question => {
         allQuestions.push({
           partIndex,
@@ -376,15 +375,15 @@ const ListeningTest = () => {
       questionIndex: 0,
       question
     }))
-  }, [testData?.Parts])
+  }, [testData?.Sections?.[0]?.Parts])
 
   const groupedQuestions = useMemo(() => {
-    if (!testData?.Parts) {
+    if (!testData?.Sections?.[0]?.Parts) {
       return []
     }
 
     const audioGroups = {}
-    testData.Parts.forEach((part, partIndex) => {
+    testData?.Sections?.[0]?.Parts.forEach((part, partIndex) => {
       part.Questions.forEach(question => {
         if (!audioGroups[question.AudioKeys]) {
           audioGroups[question.AudioKeys] = {
@@ -442,11 +441,14 @@ const ListeningTest = () => {
 
   const checkAudioPlayed = useCallback(() => {
     const audioQuestionId = getCurrentGroup()?.questions[0]?.ID
-    if (!audioQuestionId) return true // Không chặn nếu không tìm thấy ID audio (lỗi an toàn)
+    if (!audioQuestionId) {
+      return true
+    } // Không chặn nếu không tìm thấy ID audio (lỗi an toàn)
 
     const playedQuestions = JSON.parse(localStorage.getItem('listening_played_questions') || '{}')
     // Kiểm tra xem 1 trong 2 lần nghe (1 hoặc 2) đã được bấm hay chưa
-    const hasPlayed = playedQuestions[audioQuestionId] && (playedQuestions[audioQuestionId][1] || playedQuestions[audioQuestionId][2])
+    const hasPlayed =
+      playedQuestions[audioQuestionId] && (playedQuestions[audioQuestionId][1] || playedQuestions[audioQuestionId][2])
 
     if (!hasPlayed) {
       message.warning('Please listen to the Audio before choosing the answer.')
@@ -531,8 +533,8 @@ const ListeningTest = () => {
       let questionType = null
       let fullQuestionId = parentQuestionId
 
-      if (testData?.Parts) {
-        for (const part of testData.Parts) {
+      if (testData?.Sections?.[0]?.Parts) {
+        for (const part of testData?.Sections?.[0]?.Parts) {
           for (const q of part.Questions) {
             if (q.ID.startsWith(parentQuestionId)) {
               question = q

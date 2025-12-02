@@ -9,7 +9,7 @@ export const useSubmitWritingTest = () => {
 
   const submitWritingTest = async data => {
     try {
-      if (!data?.Parts) {
+      if (!data?.Sections?.[0]?.Parts) {
         return
       }
 
@@ -31,7 +31,7 @@ export const useSubmitWritingTest = () => {
         questions: []
       }
 
-      data.Parts.forEach(part => {
+      data?.Sections?.[0]?.Parts.forEach(part => {
         part.Questions.forEach((question, index) => {
           const key = `answer-${part.ID}-${index}`
           const answerText = localAnswers[key] || ''

@@ -23,7 +23,7 @@ const GrammarTest = () => {
     queryKey: ['grammarQuestions'],
     queryFn: async () => {
       const response = await fetchGrammarTestDetails()
-      const sortedParts = response.Parts.sort((a, b) => {
+      const sortedParts = response.Sections?.[0]?.Parts.sort((a, b) => {
         const partNumberA = parseInt(a.Content.match(/Part (\d+)/)?.[1]) || 0
         const partNumberB = parseInt(b.Content.match(/Part (\d+)/)?.[1]) || 0
         return partNumberA - partNumberB
@@ -43,7 +43,7 @@ const GrammarTest = () => {
     }
   })
 
-  const mergedArray = data?.Parts.flatMap(part => part.Questions) || []
+  const mergedArray = data?.Sections?.[0]?.Parts.flatMap(part => part.Questions) || []
 
   mergedArray.sort((a, b) => {
     const sequenceA = a.Sequence || 0

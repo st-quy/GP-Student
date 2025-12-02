@@ -40,13 +40,13 @@ const formatMultipleChoiceQuestion = question => ({
 const ReadingTest = () => {
   // State to track if the test has been submitted
   const [isSubmitted, setIsSubmitted] = useState(() => {
-  try {
-    const savedStatus = localStorage.getItem('readingSubmitted')
-    return savedStatus ? JSON.parse(savedStatus) : false
-  } catch {
-    return false
-  }
-})// Important to keep the submission status persistent
+    try {
+      const savedStatus = localStorage.getItem('readingSubmitted')
+      return savedStatus ? JSON.parse(savedStatus) : false
+    } catch {
+      return false
+    }
+  }) // Important to keep the submission status persistent
 
   const [userAnswers, setUserAnswers] = useState(() => {
     try {
@@ -104,7 +104,7 @@ const ReadingTest = () => {
   }, [partFlaggedStates])
 
   useEffect(() => {
-    if (testData?.Parts?.[currentPartIndex]) {
+    if (testData?.Sections?.[0]?.Parts?.[currentPartIndex]) {
       setIsFlagged(Boolean(partFlaggedStates[currentPartIndex]))
     } else {
       setIsFlagged(false)
@@ -112,11 +112,11 @@ const ReadingTest = () => {
   }, [currentPartIndex, partFlaggedStates, testData])
 
   const handleAnswerSubmit = answer => {
-    if (!testData?.Parts?.[currentPartIndex]?.Questions?.[currentQuestionIndex]) {
+    if (!testData?.Sections?.[0]?.Parts?.[currentPartIndex]?.Questions?.[currentQuestionIndex]) {
       return
     }
 
-    const currentQuestion = testData.Parts[currentPartIndex].Questions[currentQuestionIndex]
+    const currentQuestion = testData?.Sections?.[0]?.Parts[currentPartIndex].Questions[currentQuestionIndex]
 
     if (typeof answer === 'function') {
       setUserAnswers(prev => {
@@ -161,7 +161,7 @@ const ReadingTest = () => {
     const newIsFlagged = !isFlagged
     setIsFlagged(newIsFlagged)
 
-    const currentQuestion = testData.Parts[currentPartIndex].Questions[currentQuestionIndex]
+    const currentQuestion = testData?.Sections?.[0]?.Parts[currentPartIndex].Questions[currentQuestionIndex]
 
     setFlaggedQuestions(prev => {
       const newFlags = newIsFlagged ? [...prev, currentQuestion.ID] : prev.filter(id => id !== currentQuestion.ID)
@@ -182,7 +182,7 @@ const ReadingTest = () => {
       }
 
       const formattedAnswers = Object.entries(userAnswers).map(([questionId, answer]) => {
-        const question = testData.Parts.flatMap(part => part.Questions).find(q => q.ID === questionId)
+        const question = testData?.Sections?.[0]?.Parts.flatMap(part => part.Questions).find(q => q.ID === questionId)
 
         const formattedAnswer = {
           questionId,
@@ -233,7 +233,7 @@ const ReadingTest = () => {
         return formattedAnswer
       })
 
-      const allQuestions = testData.Parts.flatMap(part => part.Questions)
+      const allQuestions = testData?.Sections?.[0]?.Parts.flatMap(part => part.Questions)
       const answeredQuestionIds = new Set(formattedAnswers.map(answer => answer.questionId))
 
       const autoCompletedAnswers = allQuestions
@@ -288,7 +288,7 @@ const ReadingTest = () => {
     return <Spin className="flex min-h-screen items-center justify-center" size="large" />
   }
 
-  if (isError || !testData?.Parts?.length) {
+  if (isError || !testData?.Sections?.[0]?.Parts?.length) {
     return (
       <Alert
         className="flex min-h-screen items-center justify-center"
@@ -300,10 +300,10 @@ const ReadingTest = () => {
     )
   }
 
-  const currentPart = testData.Parts[currentPartIndex]
+  const currentPart = testData?.Sections?.[0]?.Parts[currentPartIndex]
   const sortedQuestions = (currentPart.Questions || []).sort((a, b) => a.Sequence - b.Sequence)
   const currentQuestion = sortedQuestions[currentQuestionIndex]
-  const isLastPart = currentPartIndex === testData.Parts.length - 1
+  const isLastPart = currentPartIndex === testData?.Sections?.[0]?.Parts.length - 1
 
   const shouldShowContent = () => {
     const hasSlashFormat = currentQuestion.Content.includes('/') && currentQuestion.Content.split('/').length >= 2
@@ -730,7 +730,7 @@ const ReadingTest = () => {
       </Card>
 
       <QuestionNavigatorContainer
-        testData={testData}
+        testData={testData.Sections?.[0]}
         userAnswers={userAnswers}
         flaggedQuestions={flaggedQuestions}
         setCurrentPartIndex={handlePartChange}
@@ -739,7 +739,7 @@ const ReadingTest = () => {
       />
 
       <FooterNavigator
-        totalParts={testData.Parts.length}
+        totalParts={testData?.Sections?.[0]?.Parts.length}
         currentPart={currentPartIndex}
         setCurrentPart={handlePartChange}
         handleSubmit={handleSubmit}
