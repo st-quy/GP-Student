@@ -10,6 +10,9 @@ const ListeningIntroduction = () => {
   const { enableFullScreen } = useAntiCheat()
   useEffect(() => {
     localStorage.removeItem('listening_test_submitted')
+    localStorage.removeItem('listening_played_questions')
+    localStorage.removeItem('listening_test_answers')
+    localStorage.removeItem('listening_formatted_answers')
   }, [])
 
   const onStart = async () => {

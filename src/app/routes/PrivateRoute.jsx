@@ -22,6 +22,7 @@ import WritingPage from '@pages/writing'
 import WritingIntroduction from '@pages/writing/writing-introduction'
 import WritingTest from '@pages/writing/writing-test'
 import TestLayout from '@shared/ui/test-layout'
+import ResultPage from '@pages/result-page'
 
 import { ProtectedRoute } from './ProtectedRoute'
 
@@ -151,6 +152,10 @@ const PrivateRoute = [
       {
         path: 'profile/:userId',
         element: <Profile />
+      },
+      {
+        path: 'result/:id',
+        element: <ResultPage />
       }
     ]
   }
