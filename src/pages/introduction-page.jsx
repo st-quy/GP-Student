@@ -13,7 +13,7 @@ const IntroductionPage = () => {
 
   const handleNext = async () => {
     await enableFullScreen()
-    navigate('/Listening')
+    navigate('/listening')
   }
 
   const testSections = [
