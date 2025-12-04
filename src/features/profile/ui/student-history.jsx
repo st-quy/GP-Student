@@ -38,7 +38,8 @@ const StudentHistory = ({ userId }) => {
     writingScore: item.Writing,
     writingLevel: item.WritingLevel,
     total: item.Total,
-    finalLevel: item.Level
+    finalLevel: item.Level,
+    isPublished: item.IsPublished
   }))
 
   const filteredData = sessionData.filter(item => {
@@ -129,7 +130,7 @@ const StudentHistory = ({ userId }) => {
       key: 'speaking',
       align: 'center',
       width: 150,
-      render: (_, record) => renderScore(record.speakingScore, record.speakingLevel)
+      render: (_, record) => record.isPublished ? renderScore(record.speakingScore, record.speakingLevel) : <span style={{color: '#999'}}>-</span>
     },
     {
       title: 'Writing',
@@ -137,7 +138,7 @@ const StudentHistory = ({ userId }) => {
       key: 'writing',
       align: 'center',
       width: 150,
-      render: (_, record) => renderScore(record.writingScore, record.writingLevel)
+      render: (_, record) => record.isPublished ? renderScore(record.writingScore, record.writingLevel) : <span style={{color: '#999'}}>-</span>
     },
     {
       title: 'Total',
@@ -145,9 +146,8 @@ const StudentHistory = ({ userId }) => {
       key: 'total',
       align: 'center',
       width: 100,
-      render: score => {
-        return <span style={{ fontSize: '16px', color: '#000' }}>{score ?? '-'}</span>
-      }
+      render: (_, record) => 
+        record.isPublished ? <span style={{ fontSize: '16px', color: '#000' }}>{record.total ?? '-'}</span> : <span style={{color: '#999'}}>-</span>
     },
     {
       title: 'Final Level',
@@ -155,17 +155,17 @@ const StudentHistory = ({ userId }) => {
       key: 'finalLevel',
       align: 'center',
       width: 120,
-      render: level =>
-        level ? (
+      render: (_, record) =>
+        record.isPublished && record.finalLevel ? (
           <span
             style={{
-              color: level === 'X' ? 'red' : 'black',
+              color: record.finalLevel === 'X' ? 'red' : 'black',
               textTransform: 'uppercase',
               fontWeight: 'bold',
               fontSize: '16px'
             }}
           >
-            {level}
+            {record.finalLevel}
           </span>
         ) : (
           '-'
