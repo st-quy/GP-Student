@@ -1228,6 +1228,11 @@ const ResultPage = () => {
   const currentQuestion = currentSkillData?.questions.find(q => q.id === selectedQuestionId)
   const maxScore = ['speaking', 'writing'].includes(activeTab) ? 50 : 20
 
+  const countGreenQuestions = useMemo(() => {
+    if (!currentSkillData?.questions) return 0
+    return currentSkillData.questions.filter(q => checkIsFullyCorrect(q)).length
+  }, [currentSkillData])
+
   const speakingGroups = useMemo(() => {
     if (activeTab !== 'speaking' || !currentSkillData?.questions) return {}
     const allQuestions = currentSkillData.questions
@@ -1414,7 +1419,7 @@ const ResultPage = () => {
               <div className="text-4xl font-bold">
                 {['writing', 'speaking'].includes(activeTab)
                   ? '--'
-                  : `${currentSkillData?.questions.filter(q => q.isCorrect).length}/${currentSkillData?.questions.length}`}
+                  : `${countGreenQuestions}/${currentSkillData?.questions.length}`}
               </div>
               <div className="text-xs uppercase tracking-wider opacity-80">Correct</div>
             </div>
