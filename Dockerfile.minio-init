@@ -1,0 +1,10 @@
+FROM alpine:latest
+
+RUN apk add --no-cache curl bash && \
+    curl -O https://dl.min.io/client/mc/release/linux-amd64/mc && \
+    chmod +x mc && mv mc /usr/local/bin/
+
+COPY init-minio.sh /init-minio.sh
+RUN chmod +x /init-minio.sh
+
+ENTRYPOINT ["/init-minio.sh"]
