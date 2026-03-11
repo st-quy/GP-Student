@@ -6,7 +6,7 @@ const db = require('./models');
 const cookieParser = require('cookie-parser');
 const app = express();
 const { swaggerUi, swaggerSpec } = require('./swagger');
-const { initializeStorage } = require('./services/LocalFileService');
+const { initializeBucket } = require('./services/MinIOService');
 const https = require('https');
 const fs = require('fs');
 
@@ -19,7 +19,9 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/api', require('./routes'));
 
-initializeStorage();
+(async () => {
+  await initializeBucket(); //Just for the first time
+})();
 
 const sslOptions = {
   key: fs.readFileSync('./ssl/key.pem'),

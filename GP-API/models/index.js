@@ -41,7 +41,6 @@ db.Class = require('./Class')(sequelize, DataTypes);
 db.Section = require('./Section')(sequelize, DataTypes);
 db.TopicSection = require('./TopicSection')(sequelize, DataTypes);
 db.SectionPart = require('./SectionPart')(sequelize, DataTypes);
-db.File = require('./File')(sequelize, DataTypes);
 
 // Relationships
 // User <-> Role

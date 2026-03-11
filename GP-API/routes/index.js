@@ -1,5 +1,4 @@
 const express = require('express');
-const path = require('path');
 const router = express.Router();
 
 // Importing route modules
@@ -11,18 +10,6 @@ const StudentAnswerRoutes = require('./StudentAnswerRoute');
 const StudentAnswerDraftRoutes = require('./StudentAnswerDraftRoute');
 const Excels = require('./ExcelTemplateRoute');
 const File = require('./PresignedUrlRouter');
-
-// Health check
-router.get('/', (req, res) => {
-  res.json({ status: 'ok', message: 'GP API is running' });
-});
-
-// Serve uploaded files statically (local file storage)
-router.use('/files/audio', express.static(path.join(__dirname, '..', 'uploads', 'audio')));
-router.use('/files/images', express.static(path.join(__dirname, '..', 'uploads', 'images')));
-
-// File upload/delete routes (local storage)
-router.use('/files', require('./FileRoute'));
 
 // Defining routes
 router.use('/users', userRoutes);

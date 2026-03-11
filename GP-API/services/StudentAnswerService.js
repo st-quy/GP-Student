@@ -1,6 +1,6 @@
 const { StudentAnswer, Session, Question } = require('../models');
 const { calculatePoints } = require('../services/GradeService');
-const { deleteFiles } = require('../services/LocalFileService');
+const { deleteFilesFromMinIO } = require('../services/MinIOService');
 
 /**
  * Validate incoming questions array
@@ -140,13 +140,13 @@ async function removeMinIOAudio(sessionId) {
       where: { SessionID: sessionId },
       attributes: ['AnswerAudio'],
     });
-    const audioUrls = studentAnswers
-      .map((answer) => answer.AnswerAudio)
-      .filter((url) => url != null);
+    const audioFiles = await studentAnswers.map((answer) => {
+      const audioUrl = answer.AnswerAudio;
+      const filename = getFilenameFromUrl(audioUrl);
+      return filename;
+    });
 
-    if (audioUrls.length > 0) {
-      await deleteFiles(audioUrls);
-    }
+    await deleteFilesFromMinIO(audioFiles);
 
     await Session.update(
       { minioAudioRemoved: true },
@@ -155,7 +155,7 @@ async function removeMinIOAudio(sessionId) {
       }
     );
   } catch (error) {
-    console.error('Failed to remove audio files:', error);
+    console.error('Failed to update MinioAudioRemoved:', error);
   }
 }
 
