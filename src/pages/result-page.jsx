@@ -1194,11 +1194,13 @@ const ResultPage = () => {
   const [activeTab, setActiveTab] = useState('speaking')
   const [selectedQuestionId, setSelectedQuestionId] = useState(null)
   const [filterPart, setFilterPart] = useState('All Parts')
+  const [accessDeniedMessage, setAccessDeniedMessage] = useState(null)
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true)
+        setAccessDeniedMessage(null)
         const response = await fetchExamReview(id)
         if (response && response.data) {
           setData(response.data)
@@ -1208,7 +1210,11 @@ const ResultPage = () => {
         }
       } catch (error) {
         console.error('Load result error:', error)
-        message.error('Unable to download test results.')
+        if (error.response && error.response.status === 403) {
+          setAccessDeniedMessage(error.response.data.message || 'Chưa thể xem lại bài làm lúc này. Kỳ thi chưa kết thúc hoặc điểm chưa được công bố.')
+        } else {
+          message.error('Unable to download test results.')
+        }
       } finally {
         setLoading(false)
       }
@@ -1256,6 +1262,27 @@ const ResultPage = () => {
   }, [currentSkillData, activeTab])
 
   if (loading) return <Spin size="large" className="flex h-screen items-center justify-center" />
+  
+  if (accessDeniedMessage) {
+    return (
+      <Layout className="min-h-screen bg-white">
+        <SharedHeader />
+        <Content className="mx-auto flex w-full max-w-7xl items-center justify-center p-6" style={{ marginTop: '10vh' }}>
+          <div className="flex max-w-lg flex-col items-center justify-center rounded-xl border border-red-200 bg-red-50 p-10 text-center shadow-sm">
+            <WarningOutlined className="mb-4 text-5xl text-red-500" />
+            <Title level={3} className="!mb-2 !text-red-700">Access Denied</Title>
+            <Text className="text-lg text-red-600">{accessDeniedMessage}</Text>
+            <div className="mt-6">
+              <Button type="primary" onClick={() => navigate(-1)} size="large" danger>
+                Go Back
+              </Button>
+            </div>
+          </div>
+        </Content>
+      </Layout>
+    )
+  }
+
   if (!data) return <Empty description="No data found" className="mt-20" />
 
   const tabIcons = {
