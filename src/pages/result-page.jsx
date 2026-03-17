@@ -307,7 +307,7 @@ const MultipleChoiceResult = ({ question }) => {
   )
 }
 
-// --- COMPONENT: GROUP ANSWER RESULT (Cho Listening Group) ---
+// --- COMPONENT: GROUP ANSWER RESULT ---
 
 const GroupAnswerComparison = ({ question }) => {
   let subQuestions = []
@@ -515,8 +515,6 @@ const checkIsFullyCorrect = (q) => {
     // Logic kiểm tra đúng sai tùy theo loại câu hỏi
     if (q.isCorrect) return true; // Ưu tiên flag từ server nếu có
 
-    // Fallback logic kiểm tra thủ công (giống GradeService)
-    // ... (phần này có thể giữ nguyên hoặc mở rộng nếu cần)
     return !!q.isCorrect
   } catch (e) {
     return !!q.isCorrect
@@ -584,6 +582,11 @@ const ResultPage = () => {
 
   const currentQuestion = currentSkillData?.questions?.find(q => q.id === selectedQuestionId)
   const maxScore = ['speaking', 'writing'].includes(activeTab) ? 50 : 20
+
+  const countGreenQuestions = useMemo(() => {
+    if (!currentSkillData?.questions) return 0
+    return currentSkillData.questions.filter(q => checkIsFullyCorrect(q)).length
+  }, [currentSkillData])
 
   const speakingGroups = useMemo(() => {
     if (activeTab !== 'speaking' || !currentSkillData?.questions) return {}
@@ -670,8 +673,16 @@ const ResultPage = () => {
               <div className="text-xs uppercase opacity-80">Score</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold">{['writing', 'speaking'].includes(activeTab) ? '--' : `${currentSkillData?.questions.filter(q => q.isCorrect).length}/${currentSkillData?.questions.length}`}</div>
-              <div className="text-xs uppercase opacity-80">Correct</div>
+              <div className="text-4xl font-bold">
+                {['writing', 'speaking'].includes(activeTab)
+                  ? '--'
+                  : `${countGreenQuestions}/${currentSkillData?.questions.length}`}
+              </div>
+              <div className="text-xs uppercase tracking-wider opacity-80">Correct</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold">{data.participantInfo.timeSpent || '28m'}</div>
+              <div className="text-xs uppercase tracking-wider opacity-80">Time Spent</div>
             </div>
           </div>
         </div>
