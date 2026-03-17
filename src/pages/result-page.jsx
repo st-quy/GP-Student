@@ -1195,6 +1195,29 @@ const ResultPage = () => {
   const [selectedQuestionId, setSelectedQuestionId] = useState(null)
   const [filterPart, setFilterPart] = useState('All Parts')
 
+  // Security Measures: Disable right-click, copy, and print
+  useEffect(() => {
+    const handleContextMenu = (e) => e.preventDefault()
+    const handleKeyDown = (e) => {
+      // Prevent Ctrl+C, Ctrl+P, Ctrl+S, Ctrl+U, and F12
+      if (
+        (e.ctrlKey && (e.key === 'c' || e.key === 'p' || e.key === 's' || e.key === 'u')) ||
+        e.key === 'F12'
+      ) {
+        e.preventDefault()
+        message.warning('Security measure: Action disabled on this page.')
+      }
+    }
+
+    document.addEventListener('contextmenu', handleContextMenu)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -1256,6 +1279,7 @@ const ResultPage = () => {
   }, [currentSkillData, activeTab])
 
   if (loading) return <Spin size="large" className="flex h-screen items-center justify-center" />
+
   if (!data) return <Empty description="No data found" className="mt-20" />
 
   const tabIcons = {
@@ -1346,8 +1370,30 @@ const ResultPage = () => {
   // Xác định câu hỏi hiện tại có đúng không để ẩn/hiện explanation
   const isCurrentQuestionFullyCorrect = currentQuestion && checkIsFullyCorrect(currentQuestion)
 
+  const preventCopy = (e) => {
+    e.preventDefault()
+    message.warning('Security measure: Copy/Cut/Paste is disabled on this page.')
+    return false
+  }
+
   return (
-    <Layout className="min-h-screen bg-white">
+    <Layout 
+      className="min-h-screen bg-white select-none"
+      onCopy={preventCopy}
+      onCut={preventCopy}
+      onPaste={preventCopy}
+    >
+      <style>{`
+        @media print {
+          body { display: none !important; }
+        }
+        .select-none {
+          -webkit-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
+          user-select: none;
+        }
+      `}</style>
       <SharedHeader />
       <Content className="mx-auto w-full max-w-7xl p-6">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
