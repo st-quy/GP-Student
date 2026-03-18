@@ -10,8 +10,9 @@ import store from './providers/store'
 const queryClient = new QueryClient()
 
 const hasCurrentSkill = localStorage.getItem('current_skill') !== null
+const publicPaths = ['/', '/login', '/register', '/forgot-password', '/reset-password']
 
-if (!hasCurrentSkill && window.location.pathname !== '/') {
+if (!hasCurrentSkill && !publicPaths.includes(window.location.pathname)) {
   window.location.href = '/'
 }
 
