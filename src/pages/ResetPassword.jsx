@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 const { Title, Paragraph } = Typography
 const ResetPassword = () => {
+  console.log('>>> RESET PASSWORD PAGE MOUNTED');
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [form] = Form.useForm()
