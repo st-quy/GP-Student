@@ -59,6 +59,7 @@ const ForgotPassword = () => {
               <Form.Item
                 name="email"
                 required={false}
+                normalize={value => (value ? value.trim() : value)}
                 label={
                   <span className="text-sm font-medium sm:text-base">
                     Email{' '}

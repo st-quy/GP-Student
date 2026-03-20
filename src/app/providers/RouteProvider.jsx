@@ -26,14 +26,6 @@ const router = createBrowserRouter(
       )
     },
     {
-      path: '/forgot-password',
-      element: (
-        <GuestOnlyRoute>
-          <ForgotPassword />
-        </GuestOnlyRoute>
-      )
-    },
-    {
       path: '/reset-password',
       element: <ResetPassword />
     },
