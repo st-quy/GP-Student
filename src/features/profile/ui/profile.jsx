@@ -1,11 +1,12 @@
-import { LeftOutlined } from '@ant-design/icons'
+import { CameraOutlined, LeftOutlined } from '@ant-design/icons'
 import { useChangeUserPassword, useUpdateUserProfile, useUserProfile } from '@features/profile/hooks/useProfile'
 import ChangePasswordModal from '@features/profile/ui/change-password-profile'
 import EditProfileModal from '@features/profile/ui/edit-profile'
 import { EMAIL_REG, PHONE_REG } from '@shared/lib/constants/reg'
 import SharedHeader from '@shared/ui/base-header'
+import defaultAvatar from '@assets/images/avatar.png'
 import { Avatar, Button, Card, message, Spin } from 'antd'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import * as Yup from 'yup'
@@ -30,6 +31,8 @@ const Profile = () => {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   const updateProfileMutation = useUpdateUserProfile()
   const changePasswordMutation = useChangeUserPassword()
+  const fileInputRef = useRef(null)
+  const [avatar, setAvatar] = useState(defaultAvatar)
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -118,6 +121,29 @@ const Profile = () => {
     setIsPasswordModalOpen(true)
   }
 
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = event => {
+    const file = event.target.files?.[0]
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        message.error('Image size should be less than 2MB')
+        return
+      }
+      if (!file.type.startsWith('image/')) {
+        message.error('Please upload an image file')
+        return
+      }
+      const reader = new FileReader()
+      reader.onload = e => {
+        setAvatar(e.target?.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   return (
     <>
       <SharedHeader />
@@ -127,9 +153,25 @@ const Profile = () => {
         </Button>
         <Card className="mb-6 overflow-hidden rounded-lg border border-gray-200 shadow-sm">
           <div className="flex flex-col gap-6 md:flex-row md:items-center">
-            <Avatar className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-100 bg-gray-400 text-4xl font-bold text-black md:h-24 md:w-24 md:rounded-[50%]">
-              {userData?.lastName?.charAt(0)}
-            </Avatar>
+            <div className="group relative cursor-pointer" onClick={handleAvatarClick}>
+              <div className="relative h-24 w-24">
+                <img
+                  src={avatar}
+                  alt="Profile"
+                  className="h-full w-full rounded-lg border border-gray-100 bg-blue-100 object-cover"
+                />
+                <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black bg-opacity-50 opacity-0 transition-opacity group-hover:opacity-100">
+                  <CameraOutlined className="text-xl text-white" />
+                </div>
+              </div>
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleFileChange}
+              />
+            </div>
             <div className="flex-grow">
               <h2 className="text-2xl font-semibold text-gray-800">
                 {userData?.firstName} {userData?.lastName}

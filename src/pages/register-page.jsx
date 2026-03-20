@@ -29,7 +29,7 @@ const RegisterPage = () => {
       navigate('/login')
     },
     onError: error => {
-      message.error(error.response?.data?.errors || 'Registration failed. Please try again.')
+      message.error(error.response?.data?.errors || 'Sign up failed. Please try again.')
     }
   })
 
@@ -40,6 +40,13 @@ const RegisterPage = () => {
     }))
 
     const fieldName = Object.keys(changedFields)[0]
+    const fieldValue = changedFields[fieldName]
+
+    const optionalFields = ['class', 'phone']
+    if (optionalFields.includes(fieldName) && !fieldValue) {
+      return
+    }
+
     form.validateFields([fieldName])
   }
 
@@ -146,6 +153,7 @@ const RegisterPage = () => {
                     name="email"
                     rules={[
                       { required: true, message: 'Email is required' },
+                      { max: 254, message: 'Email cannot exceed 254 characters' },
                       { pattern: EMAIL_REG, message: 'Please enter a valid email' }
                     ]}
                     hasFeedback
@@ -165,13 +173,11 @@ const RegisterPage = () => {
                       </Text>
                     }
                     name="class"
-                    // rules={[
-                    //   { required: true, message: 'Class name is required' },
-                    //   { min: 2, message: 'At least 2 characters' },
-                    //   { max: 100, message: 'Cannot exceed 100 characters' },
-                    //   { pattern: /^[A-Za-z0-9\s]+$/, message: 'Only alphanumeric characters and spaces are allowed' }
-                    // ]}
-                    hasFeedback
+                    rules={[
+                      { max: 20, message: 'Cannot exceed 20 characters' },
+                      { pattern: /^[A-Za-z0-9\s-]*$/, message: 'Only alphanumeric characters, spaces and hyphens are allowed' }
+                    ]}
+                    hasFeedback={!!formValues.class}
                     className="!mb-1"
                   >
                     <Input
@@ -191,7 +197,11 @@ const RegisterPage = () => {
                       </Text>
                     }
                     name="studentCode"
-                    rules={[{ required: true, message: 'Student ID is required' }]}
+                    rules={[
+                      { required: true, message: 'Student ID is required' },
+                      { max: 20, message: 'Cannot exceed 20 characters' },
+                      { pattern: /^[A-Za-z0-9]+$/, message: 'Only alphanumeric characters are allowed' }
+                    ]}
                     hasFeedback
                     className="!mb-1"
                   >
@@ -209,17 +219,17 @@ const RegisterPage = () => {
                       </Text>
                     }
                     name="phone"
-                    // rules={[
-                    //   { required: true, message: 'Phone number is required' },
-                    //   { pattern: /^\d+$/, message: 'Phone number must contain only numbers' },
-                    //   { pattern: PHONE_REG, message: 'Phone number is not valid (e.g. 0988668686)' }
-                    // ]}
-                    hasFeedback
+                    rules={[
+                      { pattern: /^\d+$/, message: 'Phone number must contain only numbers' },
+                      { min: 10, message: 'Phone number must be at least 10 digits' },
+                      { max: 11, message: 'Phone number cannot exceed 11 digits' }
+                    ]}
+                    hasFeedback={!!formValues.phone}
                     className="!mb-1"
                   >
                     <Input
                       placeholder="Phone Number"
-                      maxLength={10}
+                      maxLength={11}
                       className="!h-11 !rounded-md !border !border-gray-200 !bg-gray-50 !px-4 !py-2.5 !text-base"
                     />
                   </Form.Item>

@@ -16,7 +16,7 @@ const SharedHeader = () => {
   const menu = (
     <Menu>
       <Menu.Item key="0">
-        <Link to={`/profile/${user?.userId}`}>Profile</Link>
+        <Link to="/profile">Profile</Link>
       </Menu.Item>
       <Menu.Item key="1" onClick={() => setIsLogoutModalOpen(true)}>
         Sign Out
