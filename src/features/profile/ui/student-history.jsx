@@ -130,7 +130,7 @@ const StudentHistory = ({ userId }) => {
       key: 'speaking',
       align: 'center',
       width: 150,
-      render: (_, record) => record.isPublished ? renderScore(record.speakingScore, record.speakingLevel) : <span style={{color: '#999'}}>-</span>
+      render: (_, record) => record.isPublished ? renderScore(record.speakingScore, record.speakingLevel) : <span style={{ color: '#999' }}>-</span>
     },
     {
       title: 'Writing',
@@ -138,7 +138,7 @@ const StudentHistory = ({ userId }) => {
       key: 'writing',
       align: 'center',
       width: 150,
-      render: (_, record) => record.isPublished ? renderScore(record.writingScore, record.writingLevel) : <span style={{color: '#999'}}>-</span>
+      render: (_, record) => record.isPublished ? renderScore(record.writingScore, record.writingLevel) : <span style={{ color: '#999' }}>-</span>
     },
     {
       title: 'Total',
@@ -146,8 +146,8 @@ const StudentHistory = ({ userId }) => {
       key: 'total',
       align: 'center',
       width: 100,
-      render: (_, record) => 
-        record.isPublished ? <span style={{ fontSize: '16px', color: '#000' }}>{record.total ?? '-'}</span> : <span style={{color: '#999'}}>-</span>
+      render: (_, record) =>
+        record.isPublished ? <span style={{ fontSize: '16px', color: '#000' }}>{record.total ?? '-'}</span> : <span style={{ color: '#999' }}>-</span>
     },
     {
       title: 'Final Level',
@@ -202,6 +202,7 @@ const StudentHistory = ({ userId }) => {
         }}
       >
         <Input
+          maxLength={255}
           placeholder="Search session name"
           prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
           value={searchText}
