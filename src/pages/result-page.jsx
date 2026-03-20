@@ -19,6 +19,8 @@ import { Button, Card, Col, Empty, Layout, Row, Spin, Tabs, Tag, Typography, mes
 
 import { useEffect, useState, useMemo } from 'react'
 
+import Chart from 'react-apexcharts'
+
 import { useNavigate, useParams } from 'react-router-dom'
 
 const { Content } = Layout
@@ -984,6 +986,150 @@ const SubjectiveAnswerView = ({ question }) => {
   )
 }
 
+// --- COMPONENT: SCORE SUMMARY CHARTS ---
+
+const ScoreSummaryCharts = ({ skills, participantInfo }) => {
+  const skillKeys = Object.keys(skills)
+
+  const skillLabels = skillKeys.map(k => (k === 'grammar' ? 'Grammar & Vocab' : k.charAt(0).toUpperCase() + k.slice(1)))
+  const scores = skillKeys.map(k => skills[k]?.score || 0)
+  const maxScores = skillKeys.map(k => (['speaking', 'writing'].includes(k) ? 50 : 20))
+  const percentages = scores.map((s, i) => (maxScores[i] > 0 ? Math.round((s / maxScores[i]) * 100) : 0))
+
+  // Calculate total correct/incorrect for objective skills only
+  let totalCorrect = 0
+  let totalIncorrect = 0
+  skillKeys.forEach(k => {
+    if (['speaking', 'writing'].includes(k)) return
+    const questions = skills[k]?.questions || []
+    questions.forEach(q => {
+      if (q.isCorrect) totalCorrect++
+      else totalIncorrect++
+    })
+  })
+
+  const totalScore = participantInfo?.totalScore || scores.reduce((a, b) => a + b, 0)
+  const totalMaxScore = maxScores.reduce((a, b) => a + b, 0)
+  const totalPercentage = totalMaxScore > 0 ? Math.round((totalScore / totalMaxScore) * 100) : 0
+
+  const barOptions = {
+    chart: { type: 'bar', toolbar: { show: false }, fontFamily: 'inherit' },
+    plotOptions: {
+      bar: { borderRadius: 6, columnWidth: '50%', distributed: true }
+    },
+    colors: ['#003087', '#0052CC', '#2563EB', '#3B82F6', '#60A5FA'],
+    dataLabels: {
+      enabled: true,
+      formatter: (val, opts) => `${scores[opts.dataPointIndex]}/${maxScores[opts.dataPointIndex]}`,
+      style: { fontSize: '12px', fontWeight: 600, colors: ['#fff'] }
+    },
+    xaxis: {
+      categories: skillLabels,
+      labels: { style: { fontSize: '13px', fontWeight: 600, colors: '#374151' } }
+    },
+    yaxis: {
+      max: 100,
+      labels: {
+        formatter: val => `${val}%`,
+        style: { fontSize: '12px', colors: '#6B7280' }
+      }
+    },
+    tooltip: {
+      y: {
+        formatter: (val, { dataPointIndex }) =>
+          `${scores[dataPointIndex]}/${maxScores[dataPointIndex]} (${val}%)`
+      }
+    },
+    legend: { show: false },
+    grid: { borderColor: '#E5E7EB', strokeDashArray: 4 }
+  }
+
+  const barSeries = [{ name: 'Score', data: percentages }]
+
+  const pieOptions = {
+    chart: { type: 'donut', fontFamily: 'inherit' },
+    labels: ['Correct', 'Incorrect'],
+    colors: ['#52C41A', '#FF4D4F'],
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => `${Math.round(val)}%`,
+      style: { fontSize: '14px', fontWeight: 600 }
+    },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: '55%',
+          labels: {
+            show: true,
+            total: {
+              show: true,
+              label: 'Total',
+              formatter: () => `${totalCorrect + totalIncorrect}`
+            }
+          }
+        }
+      }
+    },
+    legend: {
+      position: 'bottom',
+      fontSize: '14px',
+      fontWeight: 600,
+      labels: { colors: '#374151' },
+      markers: { size: 8, offsetX: -4 }
+    },
+    tooltip: {
+      y: { formatter: val => `${val} questions` }
+    }
+  }
+
+  const pieSeries = [totalCorrect, totalIncorrect]
+
+  return (
+    <div className="mb-8">
+      <div className="mb-4 flex items-center justify-between">
+        <Title level={3} className="!mb-0 !text-[#111827]">
+          Score Summary
+        </Title>
+        <div className="flex items-center gap-3">
+          <div className="rounded-lg bg-[#003087] px-4 py-2 text-center">
+            <div className="text-2xl font-bold text-white">{totalScore}</div>
+            <div className="text-xs text-blue-200">Total Score</div>
+          </div>
+          <div className="rounded-lg bg-green-600 px-4 py-2 text-center">
+            <div className="text-2xl font-bold text-white">{totalPercentage}%</div>
+            <div className="text-xs text-green-200">Overall</div>
+          </div>
+        </div>
+      </div>
+
+      <Row gutter={24}>
+        <Col xs={24} lg={14}>
+          <Card className="h-full rounded-xl border border-gray-200 shadow-sm">
+            <Title level={5} className="!mb-2 !text-gray-700">
+              Score by Skill
+            </Title>
+            <Text type="secondary" className="mb-4 block text-sm">
+              Percentage achieved in each skill area
+            </Text>
+            <Chart options={barOptions} series={barSeries} type="bar" height={300} />
+          </Card>
+        </Col>
+        <Col xs={24} lg={10}>
+          <Card className="h-full rounded-xl border border-gray-200 shadow-sm">
+            <Title level={5} className="!mb-2 !text-gray-700">
+              Correct vs Incorrect
+            </Title>
+            <Text type="secondary" className="mb-4 block text-sm">
+              Objective questions (Listening, Reading, Grammar)
+            </Text>
+            <Chart options={pieOptions} series={pieSeries} type="donut" height={300} />
+          </Card>
+        </Col>
+      </Row>
+    </div>
+  )
+}
+
 const checkIsFullyCorrect = (q) => {
   const rawUser = q.userResponse?.text
   if (!rawUser || rawUser === '[]' || rawUser === '' || rawUser === '{}') return false
@@ -1382,6 +1528,8 @@ const ResultPage = () => {
             </div>
           </div>
         </div>
+
+        <ScoreSummaryCharts skills={data.skills} participantInfo={data.participantInfo} />
 
         <div className="mb-6 border-b border-gray-200">
           <Tabs

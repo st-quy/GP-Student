@@ -47,7 +47,7 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
     } else if (content.includes('part 2') || content.includes('part 3')) {
       return { read: '00:05', answer: '00:45' }
     } else if (isPart4) {
-      return { read: '00:05', answer: '02:00' }
+      return { read: '01:00', answer: '02:00' }
     }
 
     return timePairs[index] || timePairs[timePairs.length - 1] || { read: '00:05', answer: '00:30' }
