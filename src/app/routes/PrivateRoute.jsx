@@ -150,7 +150,7 @@ const PrivateRoute = [
         element: <SubmissionPage />
       },
       {
-        path: 'profile/:userId',
+        path: 'profile',
         element: <Profile />
       },
       {
