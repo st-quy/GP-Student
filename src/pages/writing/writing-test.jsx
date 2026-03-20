@@ -6,8 +6,8 @@ import FooterNavigator from '@features/writing/ui/writing-footer-navigator'
 import QuestionForm from '@features/writing/ui/writing-question-form'
 import QuestionNavigatorContainer from '@features/writing/ui/writing-question-navigator-container'
 import { useQuery } from '@tanstack/react-query'
-import { Typography, Spin, Card, Divider, Button } from 'antd'
-import { useState, useEffect, useCallback } from 'react'
+import { Typography, Spin, Card, Divider, Button, message } from 'antd'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 const { Title } = Typography
 
 const WritingTest = () => {
@@ -70,10 +70,53 @@ const WritingTest = () => {
     }))
   }
 
+  // BUG_MT006: Validate word count before submit
+  const validateWordCounts = useCallback(() => {
+    if (!data?.Sections?.[0]?.Parts) return true
+    const parts = data.Sections[0].Parts
+    for (let pi = 0; pi < parts.length; pi++) {
+      const part = parts[pi]
+      const partNum = parseInt(part.Content.match(/Part (\d+)/)?.[1]) || 0
+      for (let qi = 0; qi < part.Questions.length; qi++) {
+        const question = part.Questions[qi]
+        const fieldName = `answer-${part.ID}-${qi}`
+        const maxWords =
+          question.maxWords ??
+          (Array.isArray(DEFAULT_MAX_WORDS[partNum])
+            ? DEFAULT_MAX_WORDS[partNum][qi]
+            : DEFAULT_MAX_WORDS[partNum])
+        if (maxWords) {
+          const wc = countWords(answers[fieldName] || '')
+          if (wc > maxWords) {
+            message.error(`Part ${partNum}, Question ${qi + 1}: exceeds word limit (${wc}/${maxWords})`)
+            return false
+          }
+        }
+      }
+    }
+    return true
+  }, [data, answers, countWords])
+
+  // BUG_MT007: Count unanswered questions
+  const unansweredCount = useMemo(() => {
+    if (!data?.Sections?.[0]?.Parts) return 0
+    let count = 0
+    data.Sections[0].Parts.forEach(part => {
+      part.Questions.forEach((_, index) => {
+        const fieldName = `answer-${part.ID}-${index}`
+        if (!answers[fieldName] || answers[fieldName].trim() === '') {
+          count++
+        }
+      })
+    })
+    return count
+  }, [data, answers])
+
   const handleSubmit = useCallback(async () => {
+    if (!validateWordCounts()) return
     await submitWritingTest(data)
     localStorage.removeItem('current_skill')
-  }, [submitWritingTest, data])
+  }, [submitWritingTest, data, validateWordCounts])
 
   const handleForceSubmit = useCallback(() => {
     handleSubmit()
@@ -146,6 +189,7 @@ const WritingTest = () => {
         currentQuestion={currentPartIndex}
         setCurrentQuestion={setCurrentPartIndex}
         handleSubmit={handleSubmit}
+        unansweredCount={unansweredCount}
       />
     </div>
   )

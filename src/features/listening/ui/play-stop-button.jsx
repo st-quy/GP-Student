@@ -97,7 +97,13 @@ const PlayStopButton = ({ audioUrl, questionId, onPlayingChange }) => {
   const [isOtherPlaying, setIsOtherPlaying] = useState(false)
 
   if (!audioUrl) {
-    return null
+    return (
+      <div className="max-w-4xl">
+        <div className="flex items-center gap-2 rounded-md bg-amber-50 p-3 text-amber-700">
+          <span>Audio is not available for this question.</span>
+        </div>
+      </div>
+    )
   }
 
   return (

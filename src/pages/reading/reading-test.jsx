@@ -9,7 +9,7 @@ import OrderingQuestion from '@shared/ui/question-type/ordering-question'
 import NextScreen from '@shared/ui/submission/next-screen'
 import { useQuery } from '@tanstack/react-query'
 import { Spin, Alert, Typography, Card, Select, Divider } from 'antd'
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 
 const { Option } = Select
 const { Title, Text } = Typography
@@ -280,6 +280,14 @@ const ReadingTest = () => {
       window.removeEventListener('forceSubmit', handleForceSubmit)
     }
   }, [handleForceSubmit])
+
+  // BUG_MT007: Count unanswered questions
+  const unansweredCount = useMemo(() => {
+    if (!testData?.Sections?.[0]?.Parts) return 0
+    const allQuestions = testData.Sections[0].Parts.flatMap(part => part.Questions)
+    return allQuestions.filter(q => userAnswers[q.ID] === undefined).length
+  }, [testData, userAnswers])
+
   if (isSubmitted) {
     return <NextScreen nextPath="/writing" skillName="Reading" imageSrc={ReadingSubmission} />
   }
@@ -744,6 +752,7 @@ const ReadingTest = () => {
         setCurrentPart={handlePartChange}
         handleSubmit={handleSubmit}
         isLastPart={isLastPart}
+        unansweredCount={unansweredCount}
       />
     </div>
   )

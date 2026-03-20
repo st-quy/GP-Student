@@ -22,7 +22,14 @@ const ListeningTest = () => {
     const savedAnswers = localStorage.getItem(STORAGE_KEY)
     return savedAnswers ? JSON.parse(savedAnswers) : {}
   })
-  const [flaggedQuestions, setFlaggedQuestions] = useState([])
+  const [flaggedQuestions, setFlaggedQuestions] = useState(() => {
+    try {
+      const stored = localStorage.getItem('listening_flagged_questions')
+      return stored ? JSON.parse(stored) : []
+    } catch {
+      return []
+    }
+  })
   const [isAudioPlaying, setIsAudioPlaying] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(() => localStorage.getItem('listening_test_submitted') === 'true')
   const { getGlobalData, errorMessage, setErrorMessage, showErrorModal, setShowErrorModal } = useGlobalData()
@@ -683,6 +690,7 @@ const ListeningTest = () => {
         localStorage.removeItem('listening_test_answers')
         localStorage.removeItem('listening_formatted_answers')
         localStorage.removeItem('listening_played_questions')
+        localStorage.removeItem('listening_flagged_questions')
 
         setUserAnswers({})
         setFormattedAnswers({
@@ -737,11 +745,11 @@ const ListeningTest = () => {
       return
     }
 
-    if (isFlagged) {
-      setFlaggedQuestions([...flaggedQuestions, currentQuestion.ID])
-    } else {
-      setFlaggedQuestions(flaggedQuestions.filter(id => id !== currentQuestion.ID))
-    }
+    const updated = isFlagged
+      ? [...flaggedQuestions, currentQuestion.ID]
+      : flaggedQuestions.filter(id => id !== currentQuestion.ID)
+    setFlaggedQuestions(updated)
+    localStorage.setItem('listening_flagged_questions', JSON.stringify(updated))
   }
 
   const formatQuestionData = question => {
@@ -882,6 +890,26 @@ const ListeningTest = () => {
   const totalQuestions = getTotalQuestions()
   const isFlagged = currentGroup?.questions[0] && flaggedQuestions.includes(currentGroup.questions[0].ID)
 
+  // BUG_MT007: Count unanswered questions
+  const unansweredCount = useMemo(() => {
+    if (!testData?.Sections?.[0]?.Parts) return 0
+    let count = 0
+    testData.Sections[0].Parts.forEach(part => {
+      part.Questions.forEach(question => {
+        if (question.Type === 'listening-questions-group' && question.GroupContent?.listContent) {
+          const allAnswered = question.GroupContent.listContent.every(sub => {
+            const subId = `${question.ID}-${sub.ID}`
+            return userAnswers[subId] !== undefined
+          })
+          if (!allAnswered) count++
+        } else {
+          if (userAnswers[question.ID] === undefined) count++
+        }
+      })
+    })
+    return count
+  }, [testData, userAnswers])
+
   return (
     <>
       <TestNavigation
@@ -903,6 +931,7 @@ const ListeningTest = () => {
         onAutoSubmit={handleAutoSubmit}
         userAnswers={userAnswers}
         flaggedQuestions={flaggedQuestions}
+        unansweredCount={unansweredCount}
       >
         {currentGroup && (
           <>
