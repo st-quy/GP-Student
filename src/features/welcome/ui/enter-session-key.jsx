@@ -18,7 +18,8 @@ const EnterSessionKey = () => {
   const joinSession = useJoinSession()
 
   const handleStart = async values => {
-    const { sessionKey } = values
+    const sessionKey = values.sessionKey?.trim()
+    form.setFieldsValue({ sessionKey })
 
     if (userId) {
       const accessToken = localStorage.getItem('access_token')
@@ -95,13 +96,19 @@ const EnterSessionKey = () => {
                 {
                   required: true,
                   message: 'Session key is required'
+                },
+                {
+                  min: 10,
+                  message: 'Session key must be exactly 10 characters'
                 }
               ]}
+              getValueFromEvent={(e) => e.target.value.replace(/[^a-zA-Z0-9]/g, '')}
               hasFeedback
             >
               <Input
                 placeholder="Enter session key here"
                 className="w-full rounded-md border border-gray-300 p-2"
+                maxLength={10}
                 suffix={
                   form.getFieldError('sessionKey').length > 0 ? (
                     <ExclamationCircleOutlined className="text-red-500" />
