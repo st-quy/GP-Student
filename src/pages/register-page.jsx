@@ -29,7 +29,9 @@ const RegisterPage = () => {
       navigate('/login')
     },
     onError: error => {
-      message.error(error.response?.data?.errors || 'Sign up failed. Please try again.')
+      const apiError = error.response?.data?.errors
+      const normalizedError = typeof apiError === 'string' ? apiError.replace(/Student Code/gi, 'Student ID') : apiError
+      message.error(normalizedError || 'Sign up failed. Please try again.')
     }
   })
 
@@ -222,14 +224,18 @@ const RegisterPage = () => {
                     rules={[
                       { pattern: /^\d+$/, message: 'Phone number must contain only numbers' },
                       { min: 10, message: 'Phone number must be at least 10 digits' },
-                      { max: 11, message: 'Phone number cannot exceed 11 digits' }
+                      { max: 20, message: 'Phone number cannot exceed 20 digits' }
                     ]}
                     hasFeedback={!!formValues.phone}
                     className="!mb-1"
                   >
                     <Input
                       placeholder="Phone Number"
-                      maxLength={11}
+                      maxLength={20}
+                      onChange={e => {
+                        const numericValue = e.target.value.replace(/\D/g, '').slice(0, 20)
+                        form.setFieldValue('phone', numericValue)
+                      }}
                       className="!h-11 !rounded-md !border !border-gray-200 !bg-gray-50 !px-4 !py-2.5 !text-base"
                     />
                   </Form.Item>
