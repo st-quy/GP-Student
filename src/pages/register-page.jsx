@@ -235,6 +235,10 @@ const RegisterPage = () => {
                       onChange={e => {
                         const numericValue = e.target.value.replace(/\D/g, '').slice(0, 20)
                         form.setFieldValue('phone', numericValue)
+                        setFormValues(prevValues => ({
+                          ...prevValues,
+                          phone: numericValue
+                        }))
                       }}
                       className="!h-11 !rounded-md !border !border-gray-200 !bg-gray-50 !px-4 !py-2.5 !text-base"
                     />
