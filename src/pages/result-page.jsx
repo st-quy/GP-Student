@@ -12,7 +12,7 @@ import {
 } from '@ant-design/icons'
 import { fetchExamReview } from '@features/grade/api'
 import SharedHeader from '@shared/ui/base-header'
-import { Button, Card, Col, Empty, Layout, Row, Spin, Tabs, Tag, Typography, message, Select, Divider } from 'antd'
+import { Button, Card, Col, Empty, Layout, Row, Spin, Tabs, Tag, Typography, message, Select, Divider, Segmented } from 'antd'
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
@@ -475,6 +475,10 @@ const ResultPage = () => {
   const [filterPart, setFilterPart] = useState('All Parts')
   const [accessDeniedMessage, setAccessDeniedMessage] = useState(null)
 
+  // --- APTIS-186: Filter States ---
+  const [fStatus, setFStatus] = useState('all')
+  const [fType, setFType] = useState('all')
+
   useEffect(() => {
     const handleContextMenu = (e) => e.preventDefault()
     const handleKeyDown = (e) => {
@@ -509,12 +513,30 @@ const ResultPage = () => {
     if (id) loadData()
   }, [id])
 
-  useEffect(() => {
-    if (data?.skills[activeTab]?.questions?.length > 0) setSelectedQuestionId(data.skills[activeTab].questions[0].id)
-    else setSelectedQuestionId(null)
-  }, [activeTab, data])
+  const currentSkillData = useMemo(() => {
+    return data?.skills?.[activeTab] || { questions: [] }
+  }, [data, activeTab])
 
-  const currentSkillData = data?.skills[activeTab]
+  const availableTypes = useMemo(() => {
+    const qs = currentSkillData?.questions || []
+    const types = qs.map(q => (q.type || q.Type || 'Other').toLowerCase())
+    return ['all', ...new Set(types)]
+  }, [currentSkillData])
+
+  const filteredQuestions = useMemo(() => {
+    let list = Array.isArray(currentSkillData?.questions) ? [...currentSkillData.questions] : []
+    if (fStatus === 'correct') list = list.filter(q => q.isCorrect)
+    if (fStatus === 'incorrect') list = list.filter(q => !q.isCorrect)
+    if (fType !== 'all') list = list.filter(q => (q.type || q.Type || '').toLowerCase() === fType)
+    return list
+  }, [currentSkillData, fStatus, fType])
+
+  useEffect(() => {
+    if (filteredQuestions.length > 0 && !filteredQuestions.some(q => q.id === selectedQuestionId)) {
+      setSelectedQuestionId(filteredQuestions[0].id)
+    }
+  }, [filteredQuestions])
+
   const currentQuestion = currentSkillData?.questions.find(q => q.id === selectedQuestionId)
   const maxScore = ['speaking', 'writing'].includes(activeTab) ? 50 : 20
   const countGreenQuestions = useMemo(() => {
@@ -533,7 +555,7 @@ const ResultPage = () => {
     return groups
   }, [activeTab, currentSkillData, filterPart])
 
-  if (loading) return <Spin size="large" className="flex h-screen items-center justify-center" />
+  if (loading && !data) return <Spin size="large" className="flex h-screen items-center justify-center" />
   if (accessDeniedMessage) {
     return (
       <Layout className="min-h-screen bg-white"><SharedHeader /><Content className="mx-auto flex w-full max-w-7xl items-center justify-center p-6" style={{ marginTop: '10vh' }}>
@@ -601,30 +623,48 @@ const ResultPage = () => {
         </div>
 
         <Row gutter={24}>
-          {activeTab !== 'speaking' && (
+          {!(activeTab === 'speaking' || activeTab === 'writing') && (
             <Col xs={24} lg={6} className="mb-6">
-              <Card className="rounded-lg border border-gray-200 shadow-sm"><Title level={5} className="mb-4">Question Navigator</Title>
+              <Card className="rounded-lg border border-gray-200 shadow-sm" bodyStyle={{ padding: '16px' }}>
+                <div className="mb-4 flex items-center justify-between">
+                  <Title level={5} className="!mb-0">Question Navigator</Title>
+                  {(fStatus !== 'all' || fType !== 'all') && (
+                    <Button type="link" size="small" onClick={() => { setFStatus('all'); setFType('all'); }} className="p-0 text-xs">Reset</Button>
+                  )}
+                </div>
+                <Segmented block size="small" value={fStatus} onChange={setFStatus} className="mb-3" options={[{ label: 'All', value: 'all' }, { label: 'Correct', value: 'correct' }, { label: 'Wrong', value: 'incorrect' }]} />
+                <Select size="small" value={fType} onChange={setFType} className="mb-4 w-full" options={availableTypes.map(type => ({ label: type === 'all' ? 'All Types' : type.charAt(0).toUpperCase() + type.slice(1), value: type }))} />
+                <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">Found: {filteredQuestions.length} Questions</div>
                 <div className="grid grid-cols-5 gap-2">
-                  {currentSkillData?.questions.map((q, index) => {
+                  {filteredQuestions.map((q, index) => {
                     const isSelected = q.id === selectedQuestionId
                     const isTrulyCorrect = checkIsFullyCorrect(q)
                     let bgColor = isSelected ? '!bg-[#003087] !text-white' : isTrulyCorrect ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-600'
-                    if (['writing'].includes(activeTab) && !isSelected) bgColor = q.userResponse ? 'bg-blue-50 text-blue-600' : 'bg-gray-100'
-                    return <div key={q.id} onClick={() => setSelectedQuestionId(q.id)} className={`flex h-10 cursor-pointer items-center justify-center rounded font-semibold transition-all ${bgColor} hover:opacity-80`}>{index + 1}</div>
+                    return <div key={q.id} onClick={() => setSelectedQuestionId(q.id)} className={`flex h-10 cursor-pointer items-center justify-center rounded font-semibold transition-all ${bgColor} hover:opacity-80`}>{currentSkillData.questions.indexOf(q) + 1}</div>
                   })}
                 </div>
               </Card>
             </Col>
           )}
-          <Col xs={24} lg={activeTab === 'speaking' ? 24 : 18}>
+          <Col xs={24} lg={(activeTab === 'speaking' || activeTab === 'writing') ? 24 : 18}>
             {activeTab === 'speaking' ? (
               <div className="flex flex-col gap-6">{Object.entries(speakingGroups).map(([partName, questions]) => (<SpeakingPartView key={partName} partName={partName} questions={questions} />))}</div>
+            ) : activeTab === 'writing' ? (
+              <div className="flex flex-col gap-6">
+                {currentSkillData?.questions.map((q, idx) => (
+                  <div key={q.id || idx} className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                    <Title level={4} className="!mb-4">{`Writing Task ${idx + 1}:`}</Title>
+                    <QuestionHeaderDisplay question={q} />
+                    <SubjectiveAnswerView question={q} />
+                  </div>
+                ))}
+              </div>
             ) : currentQuestion ? (
               <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
                 <Title level={4} className="!mb-4">{`Question ${currentSkillData.questions.indexOf(currentQuestion) + 1}:`}</Title>
                 <QuestionHeaderDisplay question={currentQuestion} />
-                {activeTab === 'writing' ? <SubjectiveAnswerView question={currentQuestion} /> : <AnswerComparison question={currentQuestion} />}
-                {activeTab !== 'writing' && checkIsFullyCorrect(currentQuestion) && (
+                <AnswerComparison question={currentQuestion} />
+                {checkIsFullyCorrect(currentQuestion) && (
                   <div className="mt-6 rounded-lg border border-blue-100 bg-[#F0F9FF] p-5">
                     <div className="mb-2 flex items-center gap-2 text-[#003087]"><BulbFilled className="text-xl" /><span className="text-lg font-bold">Explanation</span></div>
                     <div className="leading-relaxed text-gray-700">The correct answer is derived from the key information provided in the question text.</div>
