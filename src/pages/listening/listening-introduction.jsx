@@ -15,8 +15,12 @@ const ListeningIntroduction = () => {
     localStorage.removeItem('listening_formatted_answers')
   }, [])
 
-  const onStart = async () => {
-    await enableFullScreen()
+  const onStart = () => {
+    try {
+      enableFullScreen()
+    } catch (e) {
+      console.error('Fullscreen failed:', e)
+    }
     navigate('/listening/headphonecheck')
   }
 

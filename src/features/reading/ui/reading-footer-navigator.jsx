@@ -3,7 +3,7 @@ import NavigationButtons from '@shared/ui/navigation-button'
 import { Image } from 'antd'
 
 // eslint-disable-next-line no-unused-vars
-const FooterNavigator = ({ totalParts, currentPart, setCurrentPart, handleSubmit, isLastPart = false }) => {
+const FooterNavigator = ({ totalParts, currentPart, setCurrentPart, handleSubmit, isLastPart = false, unansweredCount }) => {
   return (
     <>
       <div className="fixed bottom-8 left-4 z-20 hidden w-fit select-none mdL:block">
@@ -17,6 +17,7 @@ const FooterNavigator = ({ totalParts, currentPart, setCurrentPart, handleSubmit
           setCurrentQuestion={setCurrentPart}
           fetchQuestion={() => Promise.resolve()}
           onSubmit={handleSubmit}
+          unansweredCount={unansweredCount}
         />
       </div>
     </>

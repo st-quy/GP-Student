@@ -2,7 +2,7 @@ import { navigateLogo } from '@assets/images'
 import NavigationButtons from '@shared/ui/navigation-button'
 import { Image } from 'antd'
 
-const FooterNavigator = ({ totalQuestions, currentQuestion, setCurrentQuestion, handleSubmit }) => {
+const FooterNavigator = ({ totalQuestions, currentQuestion, setCurrentQuestion, handleSubmit, unansweredCount }) => {
   return (
     <>
       <div className="fixed bottom-8 left-4 z-20 hidden w-fit mdL:block">
@@ -16,6 +16,7 @@ const FooterNavigator = ({ totalQuestions, currentQuestion, setCurrentQuestion, 
           setCurrentQuestion={setCurrentQuestion}
           fetchQuestion={() => Promise.resolve()}
           onSubmit={handleSubmit}
+          unansweredCount={unansweredCount}
         />
       </div>
     </>

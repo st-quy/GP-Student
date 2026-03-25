@@ -8,7 +8,7 @@ import FlagButton from '@shared/ui/flag-button'
 import NextScreen from '@shared/ui/submission/next-screen'
 import { useQuery } from '@tanstack/react-query'
 import { Card, Divider, Spin, Typography } from 'antd'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 
 const { Title } = Typography
 const GrammarTest = () => {
@@ -90,6 +90,12 @@ const GrammarTest = () => {
     }
   }, [answers])
 
+  // BUG_MT007: Count unanswered questions
+  const unansweredCount = useMemo(() => {
+    if (!mergedArray.length) return 0
+    return mergedArray.filter(q => answers[`answer-${q.ID}`] === undefined).length
+  }, [mergedArray, answers])
+
   if (isSubmitted) {
     return <NextScreen nextPath="/reading" skillName="Grammar & Vocabulary" imageSrc={GrammarSubmission} />
   }
@@ -148,6 +154,7 @@ const GrammarTest = () => {
         currentQuestion={currentQuestionIndex}
         setCurrentQuestion={setCurrentQuestionIndex}
         handleSubmit={handleSubmit}
+        unansweredCount={unansweredCount}
       />
     </div>
   )
