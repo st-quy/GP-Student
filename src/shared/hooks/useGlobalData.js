@@ -1,24 +1,20 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 
 export const getGlobalDataFromStorage = () => {
   try {
     const globalDataStr = localStorage.getItem('globalData')
     if (!globalDataStr) {
-      throw new Error('Missing globalData in localStorage')
+      return null
     }
 
     const globalData = JSON.parse(globalDataStr)
     if (!globalData || typeof globalData !== 'object') {
-      throw new Error('Invalid globalData format in localStorage')
-    }
-
-    if (!globalData.studentId || !globalData.topicId || !globalData.sessionId || !globalData.sessionParticipantId) {
-      throw new Error('Missing required fields in globalData')
+      return null
     }
 
     return globalData
   } catch (error) {
-    console.error('Error getting global data:', error)
+    console.error('Error getting global data from storage:', error)
     return null
   }
 }
@@ -27,7 +23,7 @@ export const useGlobalData = () => {
   const [errorMessage, setErrorMessage] = useState('')
   const [showErrorModal, setShowErrorModal] = useState(false)
 
-  const getGlobalData = () => {
+  const getGlobalData = useCallback(() => {
     try {
       const globalData = getGlobalDataFromStorage()
       if (!globalData) {
@@ -36,11 +32,9 @@ export const useGlobalData = () => {
       return globalData
     } catch (error) {
       console.error('Error getting global data:', error)
-      setErrorMessage('Failed to load test data. Please refresh the page or contact support.')
-      setShowErrorModal(true)
       return null
     }
-  }
+  }, [])
 
   return {
     getGlobalData,

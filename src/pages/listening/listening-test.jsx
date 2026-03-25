@@ -137,13 +137,13 @@ const ListeningTest = () => {
       })
 
       if (newQuestions.length > 0) {
-        formattedAnswers = {
+        const updatedAnswers = {
           ...formattedAnswers,
           questions: [...formattedAnswers.questions, ...newQuestions]
         }
 
-        localStorage.setItem('listening_formatted_answers', JSON.stringify(formattedAnswers))
-        setFormattedAnswers(formattedAnswers)
+        localStorage.setItem('listening_formatted_answers', JSON.stringify(updatedAnswers))
+        setFormattedAnswers(updatedAnswers)
       }
     }
   }, [testData, getGlobalData])
@@ -382,7 +382,7 @@ const ListeningTest = () => {
       questionIndex: 0,
       question
     }))
-  }, [testData?.Sections?.[0]?.Parts])
+  }, [testData?.ID, testData?.Sections])
 
   const groupedQuestions = useMemo(() => {
     if (!testData?.Sections?.[0]?.Parts) {
@@ -415,7 +415,7 @@ const ListeningTest = () => {
       const bFirstSeq = b.questions[0]?.sequence || 999
       return aFirstSeq - bFirstSeq
     })
-  }, [testData])
+  }, [testData?.ID, testData?.Sections])
 
   const getTotalQuestions = () => {
     if (!groupedQuestions.length) {
