@@ -58,8 +58,7 @@ const LoginPage = () => {
         setLoginError('Login failed. Please try again.')
       }
     } catch (error) {
-      const message = error.response?.data?.message
-      setLoginError(message)
+      const message = error.response?.data?.message || 'Login failed. Please try again.'
       if (message.toLowerCase().includes('email')) {
         setLoginError({ email: message })
       } else if (message.toLowerCase().includes('password')) {
@@ -73,26 +72,36 @@ const LoginPage = () => {
   }
 
   const handlePasswordChange = () => {
-    setLoginError('')
+    setLoginError({})
     setPasswordTouched(true)
   }
 
   const password = Form.useWatch('password', form)
   const showPasswordError = passwordTouched && !password
-  return (
-    <Row className="min-h-screen bg-white">
-      <Col xs={24} md={12} className="flex flex-col justify-center px-4 sm:px-6 lg:px-8 xl:px-12">
-        <div className="mx-auto w-full max-w-[400px] py-8 sm:py-12">
-          <Space direction="vertical" size={24} className="w-full">
-            <Title level={1} className="!m-0 !text-xl !text-[#003087] sm:!text-2xl">
-              GreenPREP
-            </Title>
+  const hasPasswordError = showPasswordError || Boolean(loginError.password)
 
-            <Space direction="vertical" size={8}>
-              <Title level={2} className="!m-0 !text-xl !font-semibold !text-black sm:!text-2xl">
-                Sign in
+  return (
+    <Row className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(0,48,135,0.14),_transparent_24%),linear-gradient(135deg,_#f7fbff_0%,_#eef4ff_46%,_#f9fbff_100%)]">
+      <Col
+        xs={24}
+        md={11}
+        xl={10}
+        className="relative flex flex-col justify-center px-4 py-8 sm:px-6 lg:px-10 xl:px-14"
+      >
+        <div className="absolute inset-x-0 top-0 h-48 bg-[radial-gradient(circle,_rgba(56,189,248,0.15),_transparent_62%)]" />
+        <div className="mx-auto w-full max-w-[460px] py-4 sm:py-8">
+          <Space direction="vertical" size={24} className="w-full">
+            <div className="inline-flex w-fit rounded-full bg-[#003087]/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-[#003087]">
+              Student portal
+            </div>
+
+            <Space direction="vertical" size={10}>
+              <Title level={1} className="!m-0 !text-3xl !font-semibold !leading-tight !text-slate-900 sm:!text-4xl">
+                Dang nhap de tiep tuc hanh trinh hoc cung GreenPREP
               </Title>
-              <Text className="!text-sm !text-gray-500">Sign in to access your account.</Text>
+              <Text className="!text-base !leading-7 !text-slate-500">
+                Mot man dang nhap sang sua hon, de tap trung hon va giu moi thao tac quan trong trong tam mat.
+              </Text>
             </Space>
 
             <Form
@@ -102,12 +111,21 @@ const LoginPage = () => {
               onFinish={onFinish}
               autoComplete="on"
               requiredMark={false}
-              className="flex flex-col gap-4 sm:gap-5"
+              className="bg-white/86 flex flex-col gap-4 rounded-[28px] border border-white/70 p-5 shadow-[0_28px_80px_rgba(15,23,42,0.10)] backdrop-blur sm:gap-5 sm:p-7"
             >
+              <div className="space-y-1">
+                <Title level={2} className="!m-0 !text-xl !font-semibold !text-slate-900 sm:!text-2xl">
+                  Sign in
+                </Title>
+                <Text className="!text-sm !text-slate-500">
+                  Use your email and password to open your learning dashboard.
+                </Text>
+              </div>
+
               <div>
                 <Form.Item
                   label={
-                    <Text strong className="!text-sm">
+                    <Text strong className="!text-sm !text-slate-700">
                       Email <span className="text-red-500">*</span>
                     </Text>
                   }
@@ -126,7 +144,7 @@ const LoginPage = () => {
                 >
                   <Input
                     placeholder="Enter your email"
-                    className="!h-11 !rounded-md !border !border-gray-200 !bg-gray-50 !px-4 !py-2.5 !text-base"
+                    className="!h-12 !rounded-2xl !border !border-slate-200 !bg-slate-50 !px-4 !py-2.5 !text-base"
                   />
                 </Form.Item>
                 {loginError.email && (
@@ -135,10 +153,11 @@ const LoginPage = () => {
                   </Text>
                 )}
               </div>
+
               <div className="space-y-1">
                 <Form.Item
                   label={
-                    <Text strong className="!text-sm">
+                    <Text strong className="!text-sm !text-slate-700">
                       Password <span className="text-red-500">*</span>
                     </Text>
                   }
@@ -150,19 +169,13 @@ const LoginPage = () => {
                     }
                   ]}
                   className="!mb-0"
-                  validateStatus={
-                    (passwordTouched && !password) || loginError.password ? 'error' : loginSuccess ? 'success' : ''
-                  }
+                  validateStatus={hasPasswordError ? 'error' : loginSuccess ? 'success' : ''}
                 >
                   <Input.Password
-                    placeholder="••••••••••"
+                    placeholder="********"
                     onChange={handlePasswordChange}
-                    className={`!h-11 !rounded-md !border !bg-gray-50 !px-4 !py-2.5 !text-base ${
-                      showPasswordError || loginError
-                        ? '!border-red- 500'
-                        : loginSuccess
-                          ? '!border-green-500'
-                          : '!border-gray-200'
+                    className={`!h-12 !rounded-2xl !border !bg-slate-50 !px-4 !py-2.5 !text-base ${
+                      hasPasswordError ? '!border-red-500' : loginSuccess ? '!border-green-500' : '!border-slate-200'
                     }`}
                     iconRender={visible =>
                       visible ? (
@@ -172,7 +185,7 @@ const LoginPage = () => {
                       )
                     }
                     suffix={
-                      showPasswordError || loginError ? (
+                      hasPasswordError ? (
                         <ExclamationCircleOutlined className="text-red-500" />
                       ) : loginSuccess ? (
                         <CheckCircleOutlined className="text-green-500" />
@@ -181,6 +194,11 @@ const LoginPage = () => {
                   />
                 </Form.Item>
 
+                {showPasswordError && !loginError.password && (
+                  <Text type="danger" className="!text-sm">
+                    Password is required
+                  </Text>
+                )}
                 {loginError.password && (
                   <Text type="danger" className="!text-sm">
                     {loginError.password}
@@ -213,14 +231,14 @@ const LoginPage = () => {
                   type="primary"
                   htmlType="submit"
                   loading={loading}
-                  className="!h-11 !w-full !rounded-md !bg-[#003087] !text-base !font-medium hover:!bg-blue-900"
+                  className="!h-12 !w-full !rounded-2xl !bg-[#003087] !text-base !font-semibold shadow-[0_18px_40px_rgba(0,48,135,0.22)] hover:!bg-blue-900"
                 >
                   Sign in
                 </Button>
               </Form.Item>
 
-              <div className="text-left">
-                <Text className="!text-sm !text-gray-500">
+              <div className="rounded-2xl bg-slate-50 px-4 py-3 text-left">
+                <Text className="!text-sm !text-slate-500">
                   Don&apos;t have an account?{' '}
                   <Link to="/register" className="!text-[#003087] hover:underline">
                     Sign up
@@ -232,10 +250,26 @@ const LoginPage = () => {
         </div>
       </Col>
 
-      <Col xs={0} md={12} className="bg-white-50 relative">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="mx-auto w-full max-w-[640px] px-8 sm:px-12">
-            <img src={LoginImg} alt="Login Security Illustration" className="h-auto w-full object-contain" />
+      <Col xs={0} md={13} xl={14} className="relative hidden md:block">
+        <div className="absolute inset-0 bg-[linear-gradient(160deg,_#003087_0%,_#0f4db8_52%,_#38bdf8_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.22),_transparent_24%),radial-gradient(circle_at_bottom_left,_rgba(255,255,255,0.15),_transparent_26%)]" />
+        <div className="relative flex h-full items-center justify-center px-8 py-10 xl:px-14">
+          <div className="border-white/18 w-full max-w-[720px] rounded-[32px] border bg-white/10 p-6 shadow-2xl backdrop-blur">
+            <div className="mb-6 max-w-[460px]">
+              <Text className="!mb-3 !block !text-sm !font-medium !uppercase !tracking-[0.22em] !text-white/75">
+                Learn with confidence
+              </Text>
+              <Title level={2} className="!mb-3 !text-[34px] !font-semibold !leading-tight !text-white">
+                Moi buoi hoc bat dau tu mot diem cham don gian, ro rang va dang tin cay.
+              </Title>
+              <Text className="!text-base !leading-7 !text-white/80">
+                Giao dien moi giup hoc vien tap trung vao viec dang nhap, khoi phuc mat khau va tiep tuc hoc ma khong bi
+                roi mat.
+              </Text>
+            </div>
+            <div className="overflow-hidden rounded-[24px] bg-white/95 p-4">
+              <img src={LoginImg} alt="Login Security Illustration" className="h-auto w-full object-contain" />
+            </div>
           </div>
         </div>
       </Col>
