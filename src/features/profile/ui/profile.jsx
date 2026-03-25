@@ -2,7 +2,7 @@ import { CameraOutlined, LeftOutlined } from '@ant-design/icons'
 import { useChangeUserPassword, useUpdateUserProfile, useUserProfile } from '@features/profile/hooks/useProfile'
 import ChangePasswordModal from '@features/profile/ui/change-password-profile'
 import EditProfileModal from '@features/profile/ui/edit-profile'
-import { EMAIL_REG, PHONE_REG } from '@shared/lib/constants/reg'
+import { EMAIL_REG } from '@shared/lib/constants/reg'
 import SharedHeader from '@shared/ui/base-header'
 import defaultAvatar from '@assets/images/avatar.png'
 import { Avatar, Button, Card, message, Spin } from 'antd'
@@ -14,12 +14,30 @@ import * as Yup from 'yup'
 import StudentHistory from './student-history'
 
 const profileValidationSchema = Yup.object().shape({
-  firstName: Yup.string().required('First name is required'),
-  lastName: Yup.string().required('Last name is required'),
-  email: Yup.string().matches(EMAIL_REG, 'Invalid email format').required('Email is required'),
+  firstName: Yup.string()
+    .trim()
+    .required('First name is required')
+    .max(50, 'First name must not exceed 50 characters')
+    .test('not-only-spaces', 'First name cannot be only spaces', value => value && value.trim().length > 0),
+  lastName: Yup.string()
+    .trim()
+    .required('Last name is required')
+    .max(50, 'Last name must not exceed 50 characters')
+    .test('not-only-spaces', 'Last name cannot be only spaces', value => value && value.trim().length > 0),
+  email: Yup.string()
+    .trim()
+    .matches(EMAIL_REG, 'Invalid email format')
+    .required('Email is required')
+    .max(100, 'Email must not exceed 100 characters'),
   phone: Yup.string()
-    .matches(PHONE_REG, { message: 'Invalid phone number format' })
     .required('Phone number is required')
+    .matches(/^\d+$/, 'Phone number must contain only digits')
+    .min(9, 'Phone number must be at least 9 digits')
+    .max(20, 'Phone number must not exceed 20 digits'),
+  address: Yup.string()
+    .trim()
+    .max(200, 'Address must not exceed 200 characters')
+    .test('not-only-spaces', 'Address cannot be only spaces', value => !value || value.trim().length > 0)
 })
 
 const Profile = () => {
@@ -75,17 +93,15 @@ const Profile = () => {
     setIsEditModalOpen(false)
   }
 
-  const handleSave = async () => {
+  const handleSave = async values => {
     try {
-      if (formData.phone.length < 10 || formData.phone.length > 10) {
-        message.error('Phone number must have 10 digits')
-        return
-      }
-      await profileValidationSchema.validate(formData, { abortEarly: false })
+      // values already trimmed from EditProfileModal
+      const trimmedData = values || formData
+      await profileValidationSchema.validate(trimmedData, { abortEarly: false })
 
       await updateProfileMutation.mutateAsync({
         userId: auth.user?.userId,
-        userData: formData
+        userData: trimmedData
       })
 
       message.success('Profile updated successfully!')
