@@ -590,7 +590,18 @@ const ResultPage = () => {
       <SharedHeader />
       <Content className="mx-auto w-full max-w-7xl p-6">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <Button icon={<LeftOutlined />} onClick={() => navigate(-1)} className="border-none px-0 shadow-none">Back in history</Button>
+          <div className="flex items-center gap-4">
+            <Button icon={<LeftOutlined />} onClick={() => navigate(-1)} className="border-none px-0 shadow-none">
+              Back in history
+            </Button>
+            <Button 
+              type="primary" 
+              onClick={() => navigate(`/review/${id}`)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Detailed Review
+            </Button>
+          </div>
           <div className="flex items-center gap-3">
             <Tag color="blue" className="px-3 py-1 text-sm">Level: {data.participantInfo.finalLevel || 'N/A'}</Tag>
             <Tag color="green" className="px-3 py-1 text-sm">Total score: {data.participantInfo.totalScore || 0}</Tag>
