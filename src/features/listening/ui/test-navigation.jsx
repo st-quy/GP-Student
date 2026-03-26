@@ -23,6 +23,7 @@ const TestNavigation = ({
   onAutoSubmit,
   userAnswers,
   flaggedQuestions,
+  unansweredCount,
   children
 }) => {
   const [showAutoSubmitPopup, setShowAutoSubmitPopup] = useState(false)
@@ -155,6 +156,7 @@ const TestNavigation = ({
               setCurrentQuestion={onQuestionChange}
               fetchQuestion={onNext}
               onSubmit={onSubmit}
+              unansweredCount={unansweredCount}
             />
           </div>
         </Card>

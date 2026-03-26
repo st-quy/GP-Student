@@ -1,7 +1,15 @@
+import { ExclamationCircleOutlined } from '@ant-design/icons'
 import { Button, Modal } from 'antd'
 import { useState } from 'react'
 
-const NavigationButtons = ({ totalQuestions, currentQuestion, setCurrentQuestion, fetchQuestion, onSubmit }) => {
+const NavigationButtons = ({
+  totalQuestions,
+  currentQuestion,
+  setCurrentQuestion,
+  fetchQuestion,
+  onSubmit,
+  unansweredCount
+}) => {
   const [isSubmitModalVisible, setIsSubmitModalVisible] = useState(false)
   const [error, setError] = useState(null)
   const handleNext = async () => {
@@ -45,6 +53,8 @@ const NavigationButtons = ({ totalQuestions, currentQuestion, setCurrentQuestion
       setError('Failed to load the question. Please try again.')
     }
   }
+
+  const hasUnanswered = unansweredCount !== undefined && unansweredCount > 0
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-gray-300 bg-white p-4 shadow-lg">
@@ -94,7 +104,7 @@ const NavigationButtons = ({ totalQuestions, currentQuestion, setCurrentQuestion
       {isSubmitModalVisible && (
         <Modal
           title="Submit Test"
-          visible={isSubmitModalVisible}
+          open={isSubmitModalVisible}
           onCancel={handleSubmitModalCancel}
           footer={[
             <Button key="cancel" onClick={handleSubmitModalCancel} className="!h-[38px] !rounded-md !px-6 !text-sm">
@@ -110,6 +120,14 @@ const NavigationButtons = ({ totalQuestions, currentQuestion, setCurrentQuestion
             </Button>
           ]}
         >
+          {hasUnanswered && (
+            <div className="mb-3 flex items-center gap-2 rounded-md bg-amber-50 p-3 text-amber-700">
+              <ExclamationCircleOutlined className="text-lg text-amber-500" />
+              <span>
+                You have <strong>{unansweredCount}</strong> unanswered question{unansweredCount > 1 ? 's' : ''}.
+              </span>
+            </div>
+          )}
           <p>Are you sure you want to submit the test?</p>
         </Modal>
       )}
