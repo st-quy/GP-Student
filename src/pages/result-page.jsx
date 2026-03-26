@@ -404,7 +404,7 @@ const ScoreSummaryCharts = ({ skills, participantInfo }) => {
   const skillKeys = Object.keys(skills)
   const skillLabels = skillKeys.map(k => (k === 'grammar' ? 'Grammar & Vocab' : k.charAt(0).toUpperCase() + k.slice(1)))
   const scores = skillKeys.map(k => skills[k]?.score || 0)
-  const maxScores = skillKeys.map(k => (['speaking', 'writing'].includes(k) ? 50 : 20))
+  const maxScores = skillKeys.map(k => 50)
   const percentages = scores.map((s, i) => (maxScores[i] > 0 ? Math.round((s / maxScores[i]) * 100) : 0))
   let totalCorrect = 0
   let totalIncorrect = 0
@@ -538,7 +538,7 @@ const ResultPage = () => {
   }, [filteredQuestions])
 
   const currentQuestion = currentSkillData?.questions.find(q => q.id === selectedQuestionId)
-  const maxScore = ['speaking', 'writing'].includes(activeTab) ? 50 : 20
+  const maxScore = 50
   const countGreenQuestions = useMemo(() => {
     if (!currentSkillData?.questions) return 0
     return currentSkillData.questions.filter(q => checkIsFullyCorrect(q)).length
