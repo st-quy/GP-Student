@@ -23,141 +23,140 @@ import WritingIntroduction from '@pages/writing/writing-introduction'
 import WritingTest from '@pages/writing/writing-test'
 import TestLayout from '@shared/ui/test-layout'
 import ResultPage from '@pages/result-page'
+import ReviewPage from '@pages/review-page'
 
 import { ProtectedRoute } from './ProtectedRoute'
 
 const PrivateRoute = [
   {
-    path: '/',
-    element: <ProtectedRoute />,
+    index: true,
+    element: <HomePage />
+  },
+  {
+    path: 'writing',
+    element: <WritingPage />,
     children: [
       {
         index: true,
-        element: <HomePage />
+        element: <WritingIntroduction />
       },
       {
-        path: 'writing',
-        element: <WritingPage />,
-        children: [
-          {
-            index: true,
-            element: <WritingIntroduction />
-          },
-          {
-            path: 'test',
-            element: (
-              <TestLayout>
-                <WritingTest />
-              </TestLayout>
-            )
-          }
-        ]
-      },
-      {
-        path: 'listening',
-        element: <ListeningPage />,
-        children: [
-          {
-            index: true,
-            element: <ListeningIntroduction />
-          },
-          {
-            path: 'headphonecheck',
-            element: <HeadphoneCheck />
-          },
-          {
-            path: 'test',
-            element: (
-              <TestLayout>
-                <ListeningTest />
-              </TestLayout>
-            )
-          }
-        ]
-      },
-      {
-        path: 'grammar',
-        element: <GrammarPage />,
-        children: [
-          {
-            index: true,
-            element: <GrammarIntroduction />
-          },
-          {
-            path: 'test',
-            element: (
-              // <TestLayout>
-              <GrammarTest />
-              // </TestLayout>
-            )
-          }
-        ]
-      },
-      {
-        path: 'speaking',
-        element: <SpeakingPage />,
-        children: [
-          {
-            index: true,
-            element: <SpeakingIntroduction />
-          },
-          {
-            path: 'test/:part',
-            element: (
-              <TestLayout>
-                <SpeakingParts />
-              </TestLayout>
-            )
-          },
-          {
-            path: 'microphonecheck',
-            element: <MicrophoneCheck />
-          }
-        ]
-      },
-      {
-        path: 'reading',
-        element: <ReadingPage />,
-        children: [
-          {
-            index: true,
-            element: <ReadingIntroduction />
-          },
-          {
-            path: 'test',
-            element: (
-              <TestLayout>
-                <ReadingTest />
-              </TestLayout>
-            )
-          }
-        ]
-      },
-      {
-        path: 'rejected',
-        element: <DesktopRejectRequestPage />
-      },
-      {
-        path: 'introduction',
-        element: <IntroductionPage />
-      },
-      {
-        path: 'waiting-for-approval/:userId/:sessionId/:requestId',
-        element: <WaitingForApproval />
-      },
-      {
-        path: 'complete-test',
-        element: <SubmissionPage />
-      },
-      {
-        path: 'profile',
-        element: <Profile />
-      },
-      {
-        path: 'result/:id',
-        element: <ResultPage />
+        path: 'test',
+        element: (
+          <TestLayout>
+            <WritingTest />
+          </TestLayout>
+        )
       }
     ]
+  },
+  {
+    path: 'listening',
+    element: <ListeningPage />,
+    children: [
+      {
+        index: true,
+        element: <ListeningIntroduction />
+      },
+      {
+        path: 'headphonecheck',
+        element: <HeadphoneCheck />
+      },
+      {
+        path: 'test',
+        element: (
+          <TestLayout>
+            <ListeningTest />
+          </TestLayout>
+        )
+      }
+    ]
+  },
+  {
+    path: 'grammar',
+    element: <GrammarPage />,
+    children: [
+      {
+        index: true,
+        element: <GrammarIntroduction />
+      },
+      {
+        path: 'test',
+        element: (
+          // <TestLayout>
+          <GrammarTest />
+          // </TestLayout>
+        )
+      }
+    ]
+  },
+  {
+    path: 'speaking',
+    element: <SpeakingPage />,
+    children: [
+      {
+        index: true,
+        element: <SpeakingIntroduction />
+      },
+      {
+        path: 'test/:part',
+        element: (
+          <TestLayout>
+            <SpeakingParts />
+          </TestLayout>
+        )
+      },
+      {
+        path: 'microphonecheck',
+        element: <MicrophoneCheck />
+      }
+    ]
+  },
+  {
+    path: 'reading',
+    element: <ReadingPage />,
+    children: [
+      {
+        index: true,
+        element: <ReadingIntroduction />
+      },
+      {
+        path: 'test',
+        element: (
+          <TestLayout>
+            <ReadingTest />
+          </TestLayout>
+        )
+      }
+    ]
+  },
+  {
+    path: 'rejected',
+    element: <DesktopRejectRequestPage />
+  },
+  {
+    path: 'introduction',
+    element: <IntroductionPage />
+  },
+  {
+    path: 'waiting-for-approval/:userId/:sessionId/:requestId',
+    element: <WaitingForApproval />
+  },
+  {
+    path: 'complete-test',
+    element: <SubmissionPage />
+  },
+  {
+    path: 'profile',
+    element: <Profile />
+  },
+  {
+    path: 'result/:id',
+    element: <ResultPage />
+  },
+  {
+    path: 'review/:id',
+    element: <ReviewPage />
   }
 ]
 
