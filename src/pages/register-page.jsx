@@ -29,6 +29,7 @@ const RegisterPage = () => {
       navigate('/login')
     },
     onError: error => {
+      // Normalize backend wording so the form stays consistent with "Student ID" labels in the UI.
       const apiError = error.response?.data?.errors
       const normalizedError = typeof apiError === 'string' ? apiError.replace(/Student Code/gi, 'Student ID') : apiError
       message.error(normalizedError || 'Sign up failed. Please try again.')
@@ -53,6 +54,7 @@ const RegisterPage = () => {
   }
 
   const onFinish = () => {
+    // Keep the submit payload aligned with the API contract while using the latest form state.
     const registerData = {
       firstName: formValues.firstName,
       lastName: formValues.lastName,
