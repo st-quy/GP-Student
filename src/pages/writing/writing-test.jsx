@@ -1,6 +1,6 @@
 import { FlagFilled, FlagOutlined } from '@ant-design/icons'
 import { fetchWritingTestDetails } from '@features/writing/api'
-import { DEFAULT_MAX_WORDS } from '@features/writing/constance'
+import { getWritingWordLimits } from '@features/writing/constance'
 import { useSubmitWritingTest } from '@features/writing/hooks'
 import FooterNavigator from '@features/writing/ui/writing-footer-navigator'
 import QuestionForm from '@features/writing/ui/writing-question-form'
@@ -80,17 +80,22 @@ const WritingTest = () => {
       for (let qi = 0; qi < part.Questions.length; qi++) {
         const question = part.Questions[qi]
         const fieldName = `answer-${part.ID}-${qi}`
-        const maxWords =
-          question.maxWords ??
-          (Array.isArray(DEFAULT_MAX_WORDS[partNum])
-            ? DEFAULT_MAX_WORDS[partNum][qi]
-            : DEFAULT_MAX_WORDS[partNum])
-        if (maxWords) {
-          const wc = countWords(answers[fieldName] || '')
-          if (wc > maxWords) {
-            message.error(`Part ${partNum}, Question ${qi + 1}: exceeds word limit (${wc}/${maxWords})`)
-            return false
-          }
+        const { minWords, maxWords } = getWritingWordLimits({
+          question,
+          part,
+          partNumber: partNum,
+          questionIndex: qi
+        })
+        const wc = countWords(answers[fieldName] || '')
+
+        if (minWords && wc > 0 && wc < minWords) {
+          message.error(`Part ${partNum}, Question ${qi + 1}: minimum word count is ${minWords} (${wc}/${minWords})`)
+          return false
+        }
+
+        if (maxWords && wc > maxWords) {
+          message.error(`Part ${partNum}, Question ${qi + 1}: exceeds word limit (${wc}/${maxWords})`)
+          return false
         }
       }
     }
@@ -172,7 +177,6 @@ const WritingTest = () => {
           handleTextChange={handleTextChange}
           countWords={countWords}
           wordCounts={wordCounts}
-          DEFAULT_MAX_WORDS={DEFAULT_MAX_WORDS}
         />
       </Card>
 

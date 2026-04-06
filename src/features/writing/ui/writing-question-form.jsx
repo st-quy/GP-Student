@@ -1,3 +1,4 @@
+import { getWritingWordLimits } from '@features/writing/constance'
 import { Form, Input, Typography } from 'antd'
 
 const { Text, Title } = Typography
@@ -8,8 +9,7 @@ const QuestionForm = ({
   answers,
   handleTextChange,
   countWords,
-  wordCounts,
-  DEFAULT_MAX_WORDS
+  wordCounts
 }) => {
   const handleTextAreaChange = (fieldName, value, maxWords) => {
     const wordCount = countWords(value || '')
@@ -65,11 +65,15 @@ const QuestionForm = ({
         .sort((a, b) => a.Sequence - b.Sequence)
         .map((question, index) => {
           const fieldName = `answer-${currentPart.ID}-${index}`
-          const maxWords =
-            question.maxWords ??
-            (Array.isArray(DEFAULT_MAX_WORDS[partNumber])
-              ? DEFAULT_MAX_WORDS[partNumber][index]
-              : DEFAULT_MAX_WORDS[partNumber])
+          const { minWords, maxWords } = getWritingWordLimits({
+            question,
+            part: currentPart,
+            partNumber,
+            questionIndex: index
+          })
+          const currentWordCount = wordCounts[fieldName] || 0
+          const isBelowMin = currentWordCount > 0 && minWords && currentWordCount < minWords
+          const isAtOrOverMax = maxWords && currentWordCount >= maxWords
 
           return (
             <Form.Item
@@ -105,11 +109,13 @@ const QuestionForm = ({
                 onKeyDown={e => handleKeyDown(e, fieldName, maxWords)}
                 disabled={maxWords && wordCounts[fieldName] > maxWords}
               />
-              {maxWords && (
+              {(minWords || maxWords) && (
                 <Text
-                  className={`mt-1 block text-sm ${wordCounts[fieldName] === maxWords ? 'text-red-500' : 'text-gray-500'}`}
+                  className={`mt-1 block text-sm ${
+                    isBelowMin || isAtOrOverMax ? 'text-red-500' : 'text-gray-500'
+                  }`}
                 >
-                  {`Word count: ${wordCounts[fieldName] || 0} / ${maxWords}`}
+                  {`Word count: ${currentWordCount}${minWords ? ` | Min: ${minWords}` : ''}${maxWords ? ` | Max: ${maxWords}` : ''}`}
                 </Text>
               )}
             </Form.Item>

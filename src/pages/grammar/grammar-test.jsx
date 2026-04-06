@@ -11,6 +11,9 @@ import { Card, Divider, Spin, Typography } from 'antd'
 import { useEffect, useState, useCallback, useMemo } from 'react'
 
 const { Title } = Typography
+
+const getAnswerValue = (answers, questionId) => answers[questionId] ?? answers[`answer-${questionId}`]
+
 const GrammarTest = () => {
   const [isSubmitted, setIsSubmitted] = useState(false)
   useEffect(() => {
@@ -93,7 +96,7 @@ const GrammarTest = () => {
   // BUG_MT007: Count unanswered questions
   const unansweredCount = useMemo(() => {
     if (!mergedArray.length) return 0
-    return mergedArray.filter(q => answers[`answer-${q.ID}`] === undefined).length
+    return mergedArray.filter(q => getAnswerValue(answers, q.ID) === undefined).length
   }, [mergedArray, answers])
 
   if (isSubmitted) {
