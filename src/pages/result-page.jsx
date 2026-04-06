@@ -96,18 +96,21 @@ const toSequenceNumber = value => {
 }
 
 const sortQuestionsForReview = questions =>
-  [...(questions || [])].sort((a, b) => {
-    const sectionDiff = toSequenceNumber(a.sectionSequence) - toSequenceNumber(b.sectionSequence)
-    if (sectionDiff !== 0) return sectionDiff
+  (questions || [])
+    .map((question, index) => ({ question, index }))
+    .sort((a, b) => {
+      const sectionDiff = toSequenceNumber(a.question.sectionSequence) - toSequenceNumber(b.question.sectionSequence)
+      if (sectionDiff !== 0) return sectionDiff
 
-    const partDiff = toSequenceNumber(a.partSequence) - toSequenceNumber(b.partSequence)
-    if (partDiff !== 0) return partDiff
+      const partDiff = toSequenceNumber(a.question.partSequence) - toSequenceNumber(b.question.partSequence)
+      if (partDiff !== 0) return partDiff
 
-    const questionDiff = toSequenceNumber(a.questionSequence) - toSequenceNumber(b.questionSequence)
-    if (questionDiff !== 0) return questionDiff
+      const questionDiff = toSequenceNumber(a.question.questionSequence) - toSequenceNumber(b.question.questionSequence)
+      if (questionDiff !== 0) return questionDiff
 
-    return String(a.id || '').localeCompare(String(b.id || ''))
-  })
+      return a.index - b.index
+    })
+    .map(({ question }) => question)
 
 // --- SUB-COMPONENTS ---
 
