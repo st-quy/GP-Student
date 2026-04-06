@@ -90,6 +90,25 @@ const formatAnswerText = data => {
   return String(parsedData)
 }
 
+const toSequenceNumber = value => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : Number.MAX_SAFE_INTEGER
+}
+
+const sortQuestionsForReview = questions =>
+  [...(questions || [])].sort((a, b) => {
+    const sectionDiff = toSequenceNumber(a.sectionSequence) - toSequenceNumber(b.sectionSequence)
+    if (sectionDiff !== 0) return sectionDiff
+
+    const partDiff = toSequenceNumber(a.partSequence) - toSequenceNumber(b.partSequence)
+    if (partDiff !== 0) return partDiff
+
+    const questionDiff = toSequenceNumber(a.questionSequence) - toSequenceNumber(b.questionSequence)
+    if (questionDiff !== 0) return questionDiff
+
+    return String(a.id || '').localeCompare(String(b.id || ''))
+  })
+
 // --- SUB-COMPONENTS ---
 
 const QuestionList = ({ questions }) => {
@@ -517,19 +536,23 @@ const ResultPage = () => {
     return data?.skills?.[activeTab] || { questions: [] }
   }, [data, activeTab])
 
-  const availableTypes = useMemo(() => {
-    const qs = currentSkillData?.questions || []
-    const types = qs.map(q => (q.type || q.Type || 'Other').toLowerCase())
-    return ['all', ...new Set(types)]
+  const sortedCurrentQuestions = useMemo(() => {
+    return sortQuestionsForReview(currentSkillData?.questions || [])
   }, [currentSkillData])
 
+  const availableTypes = useMemo(() => {
+    const qs = sortedCurrentQuestions
+    const types = qs.map(q => (q.type || q.Type || 'Other').toLowerCase())
+    return ['all', ...new Set(types)]
+  }, [sortedCurrentQuestions])
+
   const filteredQuestions = useMemo(() => {
-    let list = Array.isArray(currentSkillData?.questions) ? [...currentSkillData.questions] : []
+    let list = [...sortedCurrentQuestions]
     if (fStatus === 'correct') list = list.filter(q => q.isCorrect)
     if (fStatus === 'incorrect') list = list.filter(q => !q.isCorrect)
     if (fType !== 'all') list = list.filter(q => (q.type || q.Type || '').toLowerCase() === fType)
     return list
-  }, [currentSkillData, fStatus, fType])
+  }, [sortedCurrentQuestions, fStatus, fType])
 
   useEffect(() => {
     if (filteredQuestions.length > 0 && !filteredQuestions.some(q => q.id === selectedQuestionId)) {
@@ -537,23 +560,23 @@ const ResultPage = () => {
     }
   }, [filteredQuestions])
 
-  const currentQuestion = currentSkillData?.questions.find(q => q.id === selectedQuestionId)
+  const currentQuestion = sortedCurrentQuestions.find(q => q.id === selectedQuestionId)
   const maxScore = 50
   const countGreenQuestions = useMemo(() => {
-    if (!currentSkillData?.questions) return 0
-    return currentSkillData.questions.filter(q => checkIsFullyCorrect(q)).length
-  }, [currentSkillData])
+    if (!sortedCurrentQuestions?.length) return 0
+    return sortedCurrentQuestions.filter(q => checkIsFullyCorrect(q)).length
+  }, [sortedCurrentQuestions])
 
   const speakingGroups = useMemo(() => {
-    if (activeTab !== 'speaking' || !currentSkillData?.questions) return {}
+    if (activeTab !== 'speaking' || !sortedCurrentQuestions?.length) return {}
     const groups = {}; const chunkSize = 3
-    for (let i = 0; i < currentSkillData.questions.length; i += chunkSize) {
+    for (let i = 0; i < sortedCurrentQuestions.length; i += chunkSize) {
       const partName = `Part ${Math.floor(i / chunkSize) + 1}`
       if (filterPart !== 'All Parts' && partName !== filterPart) continue
-      groups[partName] = currentSkillData.questions.slice(i, i + chunkSize)
+      groups[partName] = sortedCurrentQuestions.slice(i, i + chunkSize)
     }
     return groups
-  }, [activeTab, currentSkillData, filterPart])
+  }, [activeTab, sortedCurrentQuestions, filterPart])
 
   if (loading && !data) return <Spin size="large" className="flex h-screen items-center justify-center" />
   if (accessDeniedMessage) {
@@ -628,7 +651,7 @@ const ResultPage = () => {
           <div><h2 className="mb-1 text-2xl font-bold capitalize">{activeTab} Performance</h2><p className="text-blue-100 opacity-90">Great job! You demonstrated strong communication skills.</p></div>
           <div className="mt-4 flex gap-8 md:mt-0">
             <div className="text-center"><div className="text-4xl font-bold">{currentSkillData?.score || 0}<span className="text-2xl font-normal text-blue-300">/{maxScore}</span></div><div className="text-xs uppercase opacity-80">Score</div></div>
-            <div className="text-center"><div className="text-4xl font-bold">{['writing', 'speaking'].includes(activeTab) ? '--' : `${countGreenQuestions}/${currentSkillData?.questions.length}`}</div><div className="text-xs uppercase tracking-wider opacity-80">Correct</div></div>
+            <div className="text-center"><div className="text-4xl font-bold">{['writing', 'speaking'].includes(activeTab) ? '--' : `${countGreenQuestions}/${sortedCurrentQuestions.length}`}</div><div className="text-xs uppercase tracking-wider opacity-80">Correct</div></div>
             <div className="text-center"><div className="text-4xl font-bold">{data.participantInfo.timeSpent || '28m'}</div><div className="text-xs uppercase tracking-wider opacity-80">Time Spent</div></div>
           </div>
         </div>
@@ -651,7 +674,7 @@ const ResultPage = () => {
                     const isSelected = q.id === selectedQuestionId
                     const isTrulyCorrect = checkIsFullyCorrect(q)
                     let bgColor = isSelected ? '!bg-[#003087] !text-white' : isTrulyCorrect ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-600'
-                    return <div key={q.id} onClick={() => setSelectedQuestionId(q.id)} className={`flex h-10 cursor-pointer items-center justify-center rounded font-semibold transition-all ${bgColor} hover:opacity-80`}>{currentSkillData.questions.indexOf(q) + 1}</div>
+                    return <div key={q.id} onClick={() => setSelectedQuestionId(q.id)} className={`flex h-10 cursor-pointer items-center justify-center rounded font-semibold transition-all ${bgColor} hover:opacity-80`}>{sortedCurrentQuestions.findIndex(item => item.id === q.id) + 1}</div>
                   })}
                 </div>
               </Card>
@@ -662,7 +685,7 @@ const ResultPage = () => {
               <div className="flex flex-col gap-6">{Object.entries(speakingGroups).map(([partName, questions]) => (<SpeakingPartView key={partName} partName={partName} questions={questions} />))}</div>
             ) : activeTab === 'writing' ? (
               <div className="flex flex-col gap-6">
-                {currentSkillData?.questions.map((q, idx) => (
+                {sortedCurrentQuestions.map((q, idx) => (
                   <div key={q.id || idx} className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
                     <Title level={4} className="!mb-4">{`Writing Task ${idx + 1}:`}</Title>
                     <QuestionHeaderDisplay question={q} />
@@ -672,7 +695,7 @@ const ResultPage = () => {
               </div>
             ) : currentQuestion ? (
               <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                <Title level={4} className="!mb-4">{`Question ${currentSkillData.questions.indexOf(currentQuestion) + 1}:`}</Title>
+                <Title level={4} className="!mb-4">{`Question ${sortedCurrentQuestions.findIndex(item => item.id === currentQuestion.id) + 1}:`}</Title>
                 <QuestionHeaderDisplay question={currentQuestion} />
                 <AnswerComparison question={currentQuestion} />
                 {checkIsFullyCorrect(currentQuestion) && (
