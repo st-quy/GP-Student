@@ -670,7 +670,7 @@ const ResultPage = () => {
                 <Select size="small" value={fType} onChange={setFType} className="mb-4 w-full" options={availableTypes.map(type => ({ label: type === 'all' ? 'All Types' : type.charAt(0).toUpperCase() + type.slice(1), value: type }))} />
                 <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">Found: {filteredQuestions.length} Questions</div>
                 <div className="grid grid-cols-5 gap-2">
-                  {filteredQuestions.map((q, index) => {
+                  {filteredQuestions.map(q => {
                     const isSelected = q.id === selectedQuestionId
                     const isTrulyCorrect = checkIsFullyCorrect(q)
                     let bgColor = isSelected ? '!bg-[#003087] !text-white' : isTrulyCorrect ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-600'
