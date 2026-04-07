@@ -95,12 +95,21 @@ const submitSpeakingAnswer = async () => {
 
   try {
     const speakingAnswer = JSON.parse(speakingAnswerStr)
+
+    // Validate questions before submitting
+    if (!speakingAnswer.questions || speakingAnswer.questions.length === 0) {
+      message.warning('No answers recorded. Please complete the test before submitting.')
+      throw new Error('No answers recorded')
+    }
+
     const response = await axiosInstance.post(`/student-answers`, speakingAnswer)
     localStorage.removeItem('speaking_answer')
     return response.data
   } catch (error) {
-    message.error('Error submitting speaking answer')
-    console.error('Error details:', error.response?.data || error.message)
+    if (error.message !== 'No answers recorded') {
+      message.error('Error submitting speaking answer')
+      console.error('Error details:', error.response?.data || error.message)
+    }
     throw error
   }
 }

@@ -69,11 +69,11 @@ const formatAnswerText = data => {
 
           return (
             <div key={idx} className="flex flex-wrap items-center rounded border border-gray-200 bg-white p-2 text-sm">
-              {label && <span className="mr-2 font-semibold text-gray-600">{label}</span>}
+              {label && <span className="mr-2 font-semibold text-gray-600">{typeof label === 'string' ? label : JSON.stringify(label)}</span>}
 
               {label && value && <span className="mx-1 text-gray-400">➔</span>}
 
-              {value && <span className="ml-2 font-bold text-[#003087]">{value}</span>}
+              {value && <span className="ml-2 font-bold text-[#003087]">{typeof value === 'string' ? value : JSON.stringify(value)}</span>}
             </div>
           )
         })}
@@ -99,6 +99,10 @@ const formatAnswerText = data => {
 // --- SUB-COMPONENTS ---
 
 const QuestionList = ({ questions }) => {
+  if (!questions || !Array.isArray(questions) || questions.length === 0) {
+    return <p className="text-gray-500">No questions available.</p>
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -118,7 +122,7 @@ const QuestionList = ({ questions }) => {
             </div>
 
             <div className="pt-0.5 text-lg font-medium text-gray-800">
-              {q.questionContent || q.Content || q.content || 'No content'}
+              {String(q.questionContent || q.Content || q.content || 'No content')}
             </div>
           </div>
         ))}
@@ -1317,11 +1321,11 @@ const ResultPage = () => {
           </div>
         )}
         {question.partSubContent && (
-          <div className="mb-2 text-sm font-bold uppercase tracking-wide text-gray-500">{question.partSubContent}</div>
+          <div className="mb-2 text-sm font-bold uppercase tracking-wide text-gray-500">{String(question.partSubContent)}</div>
         )}
         {!isInlineGapFill && !isMatchingHeadings && (
           <div className="mb-2 whitespace-pre-wrap text-lg font-medium leading-relaxed text-gray-800">
-            {question.questionContent || question.Content}
+            {String(question.questionContent || question.Content || '')}
           </div>
         )}
         {isGroupQuestion && <GroupAnswerComparison question={question} />}
