@@ -32,13 +32,16 @@ const QuestionNavigatorContainer = ({
           <QuestionNavigator
             values={data?.Parts.map(question => {
               const isFlagged = flaggedQuestions[`answer-${question.ID}`] || false
+              const answer = answers[`answer-${question.ID}`]
               let isAnswered = false
 
               if (question.Type === 'matching') {
-                const answerArray = answers[question.ID]
-                isAnswered = Array.isArray(answerArray) && answerArray.length === 5
+                // Matching questions are answered if the array has the expected number of matches
+                const expectedLength = question.AnswerContent?.leftItems?.length || 0
+                isAnswered = Array.isArray(answer) && answer.length > 0 && answer.length === expectedLength
               } else {
-                isAnswered = Object.keys(answers).some(key => key.startsWith(question.ID) && answers[key] !== '')
+                // Multiple choice is answered if it's a non-empty string
+                isAnswered = typeof answer === 'string' && answer.trim() !== ''
               }
 
               let type = 'unanswered'

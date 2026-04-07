@@ -196,13 +196,13 @@ const QuestionForm = ({ currentPart, answers, setUserAnswer, onSubmit, questionN
     if (!currentPart) {
       return
     }
-    const newAnswers = { ...answers, [currentPart.ID]: answer }
+    const newAnswers = { ...answers, [`answer-${currentPart.ID}`]: answer }
     setUserAnswer(newAnswers)
     localStorage.setItem('grammarAnswers', JSON.stringify(newAnswers))
   }
 
   const storedAnswers = JSON.parse(localStorage.getItem('grammarAnswers') || '{}')
-  const userAnswer = storedAnswers[currentPart?.ID] || []
+  const userAnswer = storedAnswers[`answer-${currentPart?.ID}`]
 
   useEffect(() => {
     localStorage.setItem('grammarAnswers', JSON.stringify(answers))
@@ -228,8 +228,7 @@ const QuestionForm = ({ currentPart, answers, setUserAnswer, onSubmit, questionN
       )}
       {currentPart.Type === 'multiple-choice' && <div className="mb-6">{formatDialogueContent(questionContent)}</div>}
       <Form.Item
-        key={`answer-${currentPart.ID}`}
-        name={`answer-${currentPart.ID}`}
+        key={`answer-container-${currentPart.ID}`}
         initialValue={answers[`answer-${currentPart.ID}`] || ''}
       >
         {currentPart.Type === 'multiple-choice' ? (
@@ -255,21 +254,21 @@ const QuestionForm = ({ currentPart, answers, setUserAnswer, onSubmit, questionN
             <CustomMatchingQuestionEquals
               leftItems={currentPart.AnswerContent.leftItems}
               rightItems={currentPart.AnswerContent.rightItems}
-              userAnswer={userAnswer}
+              userAnswer={userAnswer || []}
               setUserAnswer={handleAnswerSubmit}
             />
           ) : isQuestion30 ? (
             <CustomMatchingQuestionPlus
               leftItems={currentPart.AnswerContent.leftItems}
               rightItems={currentPart.AnswerContent.rightItems}
-              userAnswer={userAnswer}
+              userAnswer={userAnswer || []}
               setUserAnswer={handleAnswerSubmit}
             />
           ) : (
             <MatchingQuestion
               leftItems={currentPart.AnswerContent.leftItems}
               rightItems={currentPart.AnswerContent.rightItems}
-              userAnswer={userAnswer}
+              userAnswer={userAnswer || []}
               setUserAnswer={handleAnswerSubmit}
             />
           )

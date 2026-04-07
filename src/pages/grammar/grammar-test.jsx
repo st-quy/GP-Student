@@ -93,7 +93,15 @@ const GrammarTest = () => {
   // BUG_MT007: Count unanswered questions
   const unansweredCount = useMemo(() => {
     if (!mergedArray.length) return 0
-    return mergedArray.filter(q => answers[`answer-${q.ID}`] === undefined).length
+    return mergedArray.filter(q => {
+      const ans = answers[`answer-${q.ID}`]
+      if (q.Type === 'matching') {
+        const expectedLength = q.AnswerContent?.leftItems?.length || 0
+        return !(Array.isArray(ans) && ans.length > 0 && ans.length === expectedLength)
+      } else {
+        return !(typeof ans === 'string' && ans.trim() !== '')
+      }
+    }).length
   }, [mergedArray, answers])
 
   if (isSubmitted) {
