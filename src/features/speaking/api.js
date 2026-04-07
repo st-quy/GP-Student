@@ -90,6 +90,7 @@ const addQuestionAnswer = (questionId, answerAudio) => {
 const submitSpeakingAnswer = async () => {
   const speakingAnswerStr = localStorage.getItem('speaking_answer')
   if (!speakingAnswerStr) {
+    console.warn('No speaking answer found in localStorage')
     return
   }
 

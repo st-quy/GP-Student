@@ -10,48 +10,72 @@ import {
   CustomerServiceOutlined,
   AppstoreOutlined
 } from '@ant-design/icons'
-
 import { fetchExamReview } from '@features/grade/api'
-
 import SharedHeader from '@shared/ui/base-header'
-
-import { Button, Card, Col, Empty, Layout, Row, Spin, Tabs, Tag, Typography, message, Select } from 'antd'
-
+import { Button, Card, Col, Empty, Layout, Row, Spin, Tabs, Tag, Typography, message, Select, Divider, Segmented } from 'antd'
 import { useEffect, useState, useMemo } from 'react'
-
 import { useNavigate, useParams } from 'react-router-dom'
 
 const { Content } = Layout
-
 const { Title, Text, Paragraph } = Typography
 
 // --- HELPERS ---
+
+const SideBySideReview = ({ userValue, correctValue, isCorrect }) => {
+  const displayUserVal = userValue || 'No answer'
+  const displayCorrectVal = correctValue || 'N/A'
+
+  return (
+    <div
+      className={`mt-4 grid grid-cols-1 gap-4 rounded-xl border p-4 md:grid-cols-2 ${
+        isCorrect ? 'border-green-100 bg-green-50/30' : 'border-red-100 bg-red-50/30'
+      }`}
+    >
+      <div className="flex flex-col gap-2">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Your Answer</span>
+        <div
+          className={`flex items-center gap-2 rounded-lg border p-3 shadow-sm ${
+            isCorrect ? 'border-green-500 bg-white text-green-600' : 'border-red-500 bg-white text-red-600'
+          }`}
+        >
+          {isCorrect ? (
+            <CheckCircleFilled className="text-base" />
+          ) : (
+            <CloseCircleFilled className="text-base" />
+          )}
+          <span className="text-base font-bold">{displayUserVal}</span>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Correct Answer</span>
+        <div className="flex items-center gap-2 rounded-lg border border-green-500 bg-white p-3 text-green-600 shadow-sm">
+          <CheckCircleFilled className="text-base" />
+          <span className="text-base font-bold">{displayCorrectVal}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const renderAudioPlayer = audioUrl => (
   <div className="mb-4 flex w-full items-center gap-3 rounded-lg bg-[#F0F7FF] p-4">
     <div className="flex items-center justify-center rounded-full bg-blue-500 p-2 text-white">
       <SoundOutlined />
     </div>
-
     <audio controls src={audioUrl} className="w-full" />
   </div>
 )
 
 const formatAnswerText = data => {
-  if (data === null || data === undefined || data === '') return <Text type="secondary">No answer provided</Text>
-
+  if (data === null || data === undefined || data === '') return 'No answer'
   let parsedData = data
-
   if (typeof data === 'string') {
     const trimmed = data.trim()
-
     if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
-      try {
-        parsedData = JSON.parse(data)
-      } catch (e) {}
+      try { parsedData = JSON.parse(data) } catch (e) {}
     }
   }
-
   if (Array.isArray(parsedData)) {
     return (
       <div className="flex flex-col gap-2">
@@ -80,21 +104,33 @@ const formatAnswerText = data => {
       </div>
     )
   }
-
   if (typeof parsedData === 'object' && parsedData !== null) {
-    return (
-      <div className="flex flex-col gap-1">
-        {Object.entries(parsedData).map(([k, v]) => (
-          <div key={k} className="text-sm">
-            <span className="font-semibold">{k}:</span> {String(v)}
-          </div>
-        ))}
-      </div>
-    )
+    return Object.values(parsedData).join(', ')
   }
-
   return String(parsedData)
 }
+
+const toSequenceNumber = value => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : Number.MAX_SAFE_INTEGER
+}
+
+const sortQuestionsForReview = questions =>
+  (questions || [])
+    .map((question, index) => ({ question, index }))
+    .sort((a, b) => {
+      const sectionDiff = toSequenceNumber(a.question.sectionSequence) - toSequenceNumber(b.question.sectionSequence)
+      if (sectionDiff !== 0) return sectionDiff
+
+      const partDiff = toSequenceNumber(a.question.partSequence) - toSequenceNumber(b.question.partSequence)
+      if (partDiff !== 0) return partDiff
+
+      const questionDiff = toSequenceNumber(a.question.questionSequence) - toSequenceNumber(b.question.questionSequence)
+      if (questionDiff !== 0) return questionDiff
+
+      return a.index - b.index
+    })
+    .map(({ question }) => question)
 
 // --- SUB-COMPONENTS ---
 
@@ -110,7 +146,6 @@ const QuestionList = ({ questions }) => {
           Questions
         </span>
       </div>
-
       <div className="flex flex-col gap-3">
         {questions.map((q, idx) => (
           <div
@@ -120,7 +155,6 @@ const QuestionList = ({ questions }) => {
             <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#003087] font-bold text-white shadow-sm">
               {idx + 1}
             </div>
-
             <div className="pt-0.5 text-lg font-medium text-gray-800">
               {String(q.questionContent || q.Content || q.content || 'No content')}
             </div>
@@ -133,9 +167,7 @@ const QuestionList = ({ questions }) => {
 
 const SpeakingPartView = ({ partName, questions }) => {
   const userAudio = questions.find(q => q.userResponse?.audio)?.userResponse?.audio
-
   const contextImage = questions.find(q => q.resources?.images?.length > 0)?.resources?.images?.[0]
-
   const teacherComment = questions.find(q => q.userResponse?.comment)?.userResponse?.comment
 
   return (
@@ -145,20 +177,14 @@ const SpeakingPartView = ({ partName, questions }) => {
           {partName}
         </Title>
       </div>
-
       <div className="mb-8">
         {contextImage ? (
           <Row gutter={32}>
             <Col xs={24} md={10} className="mb-6 md:mb-0">
               <div className="flex h-full items-center justify-center overflow-hidden rounded-lg border border-gray-100 bg-gray-50 p-2">
-                <img
-                  src={contextImage}
-                  alt="Context"
-                  className="h-auto max-h-[400px] w-full rounded-md object-contain"
-                />
+                <img src={contextImage} alt="Context" className="h-auto max-h-[400px] w-full rounded-md object-contain" />
               </div>
             </Col>
-
             <Col xs={24} md={14}>
               <QuestionList questions={questions} />
             </Col>
@@ -169,20 +195,17 @@ const SpeakingPartView = ({ partName, questions }) => {
           </div>
         )}
       </div>
-
       <div className="mt-6 border-t border-gray-100 pt-6">
         <div className="rounded-xl border border-blue-100 bg-[#F0F7FF] p-6">
           <div className="mb-4 flex items-center gap-3">
             <div className="rounded-full bg-blue-600 p-2 text-white shadow-sm">
               <SoundOutlined className="text-xl" />
             </div>
-
             <div>
               <h4 className="m-0 text-lg font-bold text-gray-800">Your Recording</h4>
               <span className="text-sm text-gray-500">Listen to your response for this part</span>
             </div>
           </div>
-
           {userAudio ? (
             <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
               <audio controls src={userAudio} className="h-10 w-full" />
@@ -192,7 +215,6 @@ const SpeakingPartView = ({ partName, questions }) => {
               No recording found.
             </div>
           )}
-
           {teacherComment && (
             <div className="mt-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
               <div className="mb-2 flex items-center gap-2 text-base font-bold text-[#003087]">
@@ -208,313 +230,47 @@ const SpeakingPartView = ({ partName, questions }) => {
   )
 }
 
-// --- COMPONENT: DROPDOWN LIST RESULT ---
-
 const DropdownListResult = ({ question }) => {
-  
-  // 1. Parse User Response thành Map
   let userAnswersMap = {}
+  const clean = s => String(s || '').replace(/[+.\\s]/g, '').trim().toLowerCase()
   try {
     const raw = question.userResponse?.text
     if (raw) {
       let parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
       if (Array.isArray(parsed)) {
         parsed.forEach(item => {
-          const k = item.key || item.left || item.questionId
-          const v = item.value || item.right || item.answerText
-          if (k) userAnswersMap[String(k).trim().toLowerCase()] = v
+          const k = clean(item.key || item.left || item.id || item.questionId)
+          if (k) userAnswersMap[k] = item.value || item.right || item.answerText || item.text
         })
-      } else if (typeof parsed === 'object' && parsed !== null) {
+      } else if (typeof parsed === 'object') {
         Object.entries(parsed).forEach(([k, v]) => {
-          userAnswersMap[String(k).trim().toLowerCase()] = v
+          userAnswersMap[clean(k)] = v
         })
       }
     }
-    
   } catch (e) {}
-
-  // 2. Parse Content & Chuẩn bị dữ liệu
   let correctAnswers = []
-  let leftItems = []
-  let optionsMap = {}
-  let commonOptions = []
-  let isCommonOptions = false
-  let allPossibleValues = new Set()
-
   try {
     const rawContent = question.resources?.answerContent || question.AnswerContent
     const contentObj = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent
-
-    if (contentObj) {
-      if (contentObj.correctAnswer) {
-        const rawCorrect = Array.isArray(contentObj.correctAnswer)
-          ? contentObj.correctAnswer
-          : Object.entries(contentObj.correctAnswer).map(([k, v]) => ({ key: k, value: v }))
-
-        correctAnswers = rawCorrect.map(item => ({
-          key: item.key !== undefined ? item.key : item.left,
-          value: item.value !== undefined ? item.value : item.right
-        }))
-
-        correctAnswers.forEach(c => {
-          if (c.value) allPossibleValues.add(c.value)
-        })
-      }
-
-      if (contentObj.leftItems) leftItems = contentObj.leftItems
-      else if (contentObj.options && Array.isArray(contentObj.options)) {
-        leftItems = contentObj.options.map(opt => opt.key || opt.left)
-      }
-
-      if (contentObj.rightItems && Array.isArray(contentObj.rightItems)) {
-        isCommonOptions = true
-        commonOptions = contentObj.rightItems
-        commonOptions.forEach(v => allPossibleValues.add(v))
-      } else if (contentObj.options && Array.isArray(contentObj.options)) {
-        contentObj.options.forEach(opt => {
-          const val = opt.value || opt.right
-          const key = opt.key || opt.left
-
-          if (key) optionsMap[key] = val
-
-          if (Array.isArray(val)) {
-            val.forEach(v => allPossibleValues.add(v))
-          } else if (val) {
-            allPossibleValues.add(val)
-          }
-        })
-      }
+    if (contentObj?.correctAnswer) {
+      correctAnswers = Array.isArray(contentObj.correctAnswer) 
+        ? contentObj.correctAnswer 
+        : Object.entries(contentObj.correctAnswer).map(([k, v]) => ({ key: k, value: v }))
     }
-  } catch (e) {
-    console.error('Error parsing content:', e)
-  }
-
-  const rowsToRender = leftItems.length > 0 ? leftItems : correctAnswers.map(c => c.key)
-
-  const fullTextContent = question.questionContent || question.Content || ''
-  const contentLines = fullTextContent
-    .split(/\r?\n/)
-    .map(line => line.trim())
-    .filter(Boolean)
-
-  if (rowsToRender.length === 0) return formatAnswerText(question.userResponse?.text)
-
- return (
-  <div className="mt-6 flex flex-col gap-6">
-    {rowsToRender.map((rowKey, idx) => {
-      const normalize = (str) => String(str || '').trim().toLowerCase()
-      
-      // 1. Xác định Key
-      const rawKeyText = typeof rowKey === 'string' ? rowKey : rowKey?.key || `Question ${idx + 1}`
-      const isParagraphStyle = String(rawKeyText).trim().startsWith('Paragraph')
-
-      // 2. Xác định Text hiển thị
-      let textToDisplay = rawKeyText
-      if (isParagraphStyle && fullTextContent) {
-        const foundLine = contentLines.find((line) =>
-          line.toLowerCase().startsWith(String(rawKeyText).toLowerCase())
-        )
-        if (foundLine) textToDisplay = foundLine
-      }
-
-      // 3. [FIXED] Tìm đáp án đúng (Sửa lỗi gán mảng)
-      // Ưu tiên tìm theo Key/Index chuẩn xác nhất
-      let correctItem = correctAnswers.find((c) => String(c.key) === String(idx + 1))
-      // Fallback nếu cần (nhưng nên hạn chế logic đoán mò)
-      if (!correctItem) correctItem = correctAnswers[idx]
-
-      // 4. Tìm câu trả lời của user
-      // Nên thống nhất key lưu trong userAnswersMap để tránh check nhiều lần
-      let userSelectedValue = userAnswersMap[normalize(rawKeyText)] 
-      if (userSelectedValue === undefined) userSelectedValue = userAnswersMap[String(idx)]
-      // if (userSelectedValue === undefined) userSelectedValue = userAnswersMap[String(idx + 1)]
-
-      const hasAnswer = userSelectedValue !== undefined && userSelectedValue !== null && userSelectedValue !== ''
-      // So sánh đáp án (Normalized để tránh lỗi hoa/thường)
-      const isCorrect = hasAnswer && correctItem && normalize(userSelectedValue) === normalize(correctItem.value)
-      const displayValue = hasAnswer ? userSelectedValue : null
-
-      // 5. Xử lý danh sách Options
-      let currentOptions = []
-      if (isCommonOptions) {
-        currentOptions = [...commonOptions]
-      } else if (isParagraphStyle) {
-        currentOptions = Array.from(allPossibleValues)
-      } else {
-        const specificOpts = optionsMap[rawKeyText] || optionsMap[String(idx)]
-        currentOptions = Array.isArray(specificOpts) ? specificOpts : specificOpts ? [specificOpts] : []
-        if (currentOptions.length === 0) currentOptions = Array.from(allPossibleValues)
-      }
-
-      // Đảm bảo options chứa cả đáp án đúng và đáp án user chọn
-      if (correctItem?.value && !currentOptions.includes(correctItem.value)) {
-        currentOptions.push(correctItem.value)
-      }
-      if (hasAnswer && !currentOptions.includes(userSelectedValue)) {
-        currentOptions.push(userSelectedValue)
-      }
-      // Unique options
-      currentOptions = [...new Set(currentOptions)]
-
-      // Hàm render Dropdown tách ra cho gọn
-      const renderDropdown = () => (
-        <Select
-          value={displayValue}
-          placeholder={<span className="italic text-gray-400">No answer provided</span>}
-          className={`custom-result-select w-full`}
-          style={{
-            border: isCorrect ? '1px solid #52c41a' : hasAnswer ? '1px solid #ff4d4f' : '1px solid #d9d9d9',
-            borderRadius: '8px',
-            backgroundColor: isCorrect ? '#f6ffed' : hasAnswer ? '#fff1f0' : '#ffffff',
-            height: '42px',
-          }}
-          bordered={false}
-          dropdownStyle={{ minWidth: '300px' }}
-        >
-          {currentOptions.map((opt, optIdx) => {
-            const isOptTrueAnswer = normalize(opt) === normalize(correctItem?.value)
-            const isOptSelected = normalize(opt) === normalize(userSelectedValue)
-
-            // Logic hiển thị màu: Giữ nguyên logic của bạn (chỉ hiện đúng khi user chọn đúng)
-            const showAsCorrect = isOptTrueAnswer && isOptSelected
-            const showAsWrong = isOptSelected && !isOptTrueAnswer
-
-            return (
-              <Select.Option key={optIdx} value={opt}>
-                <div className="flex w-full items-center justify-between">
-                  <span
-                    className={`flex-1 ${
-                      showAsCorrect
-                        ? 'font-semibold text-green-600'
-                        : showAsWrong
-                        ? 'text-red-500'
-                        : 'text-gray-700'
-                    }`}
-                  >
-                    {opt}
-                  </span>
-                  {showAsCorrect && <CheckCircleFilled className="ml-2 text-lg text-green-500" />}
-                  {showAsWrong && <CloseCircleFilled className="ml-2 text-lg text-red-500" />}
-                </div>
-              </Select.Option>
-            )
-          })}
-        </Select>
-      )
-
-      if (isParagraphStyle) {
-        // Tách phần prefix (VD: Question 1 - ...) an toàn hơn
-        const separatorIndex = textToDisplay.indexOf('-')
-        const hasSeparator = separatorIndex !== -1
-        const prefix = hasSeparator ? textToDisplay.substring(0, separatorIndex + 1) : ''
-        const content = hasSeparator ? textToDisplay.substring(separatorIndex + 1) : textToDisplay
-
-        return (
-          <div key={idx} className="flex flex-col gap-3">
-            <div className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
-              <div className="min-w-[24px] text-lg font-bold text-gray-700">{idx + 1}.</div>
-              <div className="flex-1">{renderDropdown()}</div>
-            </div>
-            <div className="whitespace-pre-wrap pl-1 text-justify text-base leading-relaxed text-gray-800">
-              {hasSeparator && <span className="mr-1 font-bold">{prefix}</span>}
-              {content}
-            </div>
-            {idx < rowsToRender.length - 1 && <div className="my-4 border-b border-gray-100"></div>}
-          </div>
-        )
-      }
-
-      return (
-        <div
-          key={idx}
-          className="flex w-full flex-col items-center gap-6 border-b border-gray-100 pb-4 last:border-0 sm:flex-row"
-        >
-          <div className="min-w-[250px] flex-1">
-            <p className="m-0 text-base font-medium leading-relaxed text-gray-800">{rawKeyText}</p>
-          </div>
-          <div className="relative w-full flex-shrink-0 sm:w-[300px]">{renderDropdown()}</div>
-        </div>
-      )
-    })}
-  </div>
-)
-}
-
-// --- NEW COMPONENT: MULTIPLE CHOICE RESULT ---
-
-const MultipleChoiceResult = ({ question }) => {
-  let options = []
-  try {
-    const rawContent = question.resources?.answerContent || question.AnswerContent
-    const answerContent = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent
-    const contentObj = Array.isArray(answerContent) ? answerContent[0] : answerContent
-    if (contentObj?.options) {
-      options = contentObj.options
-    }
-  } catch (e) {
-    console.error('Error parsing MC options', e)
-  }
-
-  const normalize = str =>
-    String(str || '')
-      .trim()
-      .toLowerCase()
-  const userAns = normalize(question.userResponse?.text)
-  const correctAns = normalize(question.correctAnswer)
-
-  if (!options.length) return <div className="italic text-gray-400">No options available.</div>
-
+  } catch (e) {}
   return (
-    <div className="mt-4 flex flex-col gap-3">
-      {options.map((opt, i) => {
-        const optKey = opt.key || String.fromCharCode(65 + i)
-        const optValue = opt.value || opt
-
-        const currentOptKey = normalize(optKey)
-        const currentOptValue = normalize(optValue)
-
-        // 1. Là đáp án đúng
-        const isTrueAnswer = currentOptKey === correctAns || currentOptValue === correctAns
-        // 2. Là đáp án học sinh đã chọn
-        const isUserSelected = currentOptKey === userAns || currentOptValue === userAns
-
-        // --- [UPDATE] LOGIC MÀU SẮC (KHÔNG HIỆN ĐÁP ÁN ĐÚNG NẾU SAI) ---
-
-        let containerClass = 'border-gray-200 bg-white' // Mặc định
-        let keyBoxClass = 'bg-white text-gray-500 border-r border-gray-200'
-        let icon = null
-
-        if (isUserSelected) {
-          if (isTrueAnswer) {
-            // Chọn ĐÚNG -> Hiện Xanh
-            containerClass = 'border-green-500 bg-[#F6FFED]'
-            keyBoxClass = 'bg-[#52C41A] text-white'
-            icon = <CheckCircleFilled className="text-xl text-[#52C41A]" />
-          } else {
-            // Chọn SAI -> Hiện Đỏ
-            containerClass = 'border-red-500 bg-[#FFF1F0]'
-            keyBoxClass = 'bg-[#FF4D4F] text-white'
-            icon = <CloseCircleFilled className="text-xl text-[#FF4D4F]" />
-          }
-        } else {
-          // Không chọn: Giữ nguyên màu trắng (Kể cả đó là đáp án đúng cũng KHÔNG hiện xanh)
-          containerClass = 'border-gray-200 bg-white hover:bg-gray-50'
-          keyBoxClass = 'bg-white text-gray-500 border-r border-gray-200'
-        }
-
+    <div className="mt-6 flex flex-col gap-4">
+      {correctAnswers.map((item, idx) => {
+        const keyText = item.key || item.left || String(idx + 1)
+        const keyForMap = clean(keyText)
+        const correctVal = item.value || item.right
+        const userVal = userAnswersMap[keyForMap]
+        const isCorrect = clean(userVal) === clean(correctVal)
         return (
-          <div
-            key={i}
-            className={`group flex items-stretch overflow-hidden rounded-lg border transition-all ${containerClass}`}
-            style={{ minHeight: '56px' }}
-          >
-            <div
-              className={`flex w-[56px] min-w-[56px] flex-shrink-0 items-center justify-center text-lg font-bold ${keyBoxClass}`}
-            >
-              {optKey}
-            </div>
-            <div className="flex flex-1 items-center px-4 py-3 text-base font-medium text-gray-800">{optValue}</div>
-            {icon && <div className="flex items-center justify-center px-4">{icon}</div>}
+          <div key={idx} className="border-b border-gray-100 pb-4 last:border-0">
+            <div className="mb-2 font-medium text-gray-700">Question {keyText}:</div>
+            <SideBySideReview userValue={userVal} correctValue={correctVal} isCorrect={isCorrect} />
           </div>
         )
       })}
@@ -522,113 +278,60 @@ const MultipleChoiceResult = ({ question }) => {
   )
 }
 
-// --- COMPONENT: GROUP ANSWER RESULT (Cho Listening Group) ---
+const MultipleChoiceResult = ({ question }) => {
+  const parseValue = (val) => {
+    if (val === null || val === undefined) return null
+    try {
+      const parsed = typeof val === 'string' ? JSON.parse(val) : val
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed[0].value || parsed[0].answer || parsed[0].text || parsed[0].answerText || String(parsed[0])
+      }
+      if (typeof parsed === 'object' && parsed !== null) {
+        return parsed.value || parsed.answer || parsed.text || Object.values(parsed)[0]
+      }
+      return String(parsed)
+    } catch (e) { return String(val) }
+  }
+  const userAns = parseValue(question.userResponse?.text) || parseValue(question.userResponse?.answer) || parseValue(question.userResponse) || 'No answer'
+  const correctAns = parseValue(question.correctAnswer) || 'N/A'
+  const isCorrect = !!question.isCorrect
+  return <SideBySideReview userValue={userAns} correctValue={correctAns} isCorrect={isCorrect} />
+}
 
 const GroupAnswerComparison = ({ question }) => {
   let subQuestions = []
   try {
     const rawContent = question.resources?.answerContent || question.AnswerContent
     const answerContent = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent
-    if (answerContent?.groupContent?.listContent) {
-      subQuestions = answerContent.groupContent.listContent
-    } else if (Array.isArray(answerContent)) {
-      subQuestions = answerContent
-    }
-  } catch (e) {
-    console.error(e)
-  }
-
+    subQuestions = answerContent?.groupContent?.listContent || (Array.isArray(answerContent) ? answerContent : [])
+  } catch (e) {}
   let userAnswersMap = {}
   try {
     if (question.userResponse?.text) {
       const raw = JSON.parse(question.userResponse.text)
       if (Array.isArray(raw)) {
-        raw.forEach(item => {
-          const k = item.key || item.questionId || item.id || item.ID
-          const v = item.value || item.answerText || item.text || item.answer
-          if (k) userAnswersMap[String(k)] = v
+        raw.forEach((item, index) => {
+          const k1 = String(item.ID || item.id || '').trim()
+          const k2 = String(item.key || '').trim()
+          const val = item.answer || item.value || item.answerText
+          if (k1) userAnswersMap[k1] = val
+          if (k2) userAnswersMap[k2] = val
+          userAnswersMap[`index-${index}`] = val
         })
-      } else if (typeof raw === 'object') {
-        Object.keys(raw).forEach(k => (userAnswersMap[String(k)] = raw[k]))
       }
     }
-  } catch (e) {
-    console.error(e)
-  }
-
-  if (!subQuestions.length) return <div className="p-4 text-center text-gray-400">No details available.</div>
-
+  } catch (e) {}
   return (
     <div className="mt-6 flex flex-col gap-6">
       {subQuestions.map((subQ, index) => {
-        const subID = String(subQ.ID)
-        const parentID = String(question.id)
-        const compositeKey = `${parentID}-${subID}`
-
-        const userVal = userAnswersMap[subID] || userAnswersMap[String(index + 1)] || userAnswersMap[compositeKey]
+        const subID = String(subQ.ID || subQ.id || '').trim()
+        const userVal = userAnswersMap[subID] || userAnswersMap[String(index + 1)] || userAnswersMap[`index-${index}`]
         const correctVal = subQ.correctAnswer
-
+        const isCorrect = userVal && correctVal && String(userVal).trim().toLowerCase() === String(correctVal).trim().toLowerCase()
         return (
-          <div key={index} className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="mb-4 flex gap-3">
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#E6F0FA] font-bold text-[#003087]">
-                {index + 1}
-              </div>
-              <div className="pt-1 text-lg font-medium text-gray-900">{subQ.content || `Question ${index + 1}`}</div>
-            </div>
-
-            {subQ.options && (
-              <div className="ml-11 flex flex-col gap-3">
-                {subQ.options.map((optText, i) => {
-                  const optKey = String.fromCharCode(65 + i)
-                  const normalize = s =>
-                    String(s || '')
-                      .trim()
-                      .toLowerCase()
-
-                  const isUserSelected =
-                    normalize(userVal) === normalize(optKey) || normalize(userVal) === normalize(optText)
-                  const isTrueAnswer =
-                    normalize(correctVal) === normalize(optKey) || normalize(correctVal) === normalize(optText)
-
-                  // --- [UPDATE] LOGIC MÀU SẮC ---
-                  let styleClass = 'border-gray-200 bg-white hover:bg-gray-50'
-                  let keyBoxClass = 'bg-white text-gray-500 border-r border-gray-200'
-                  let icon = null
-
-                  if (isUserSelected) {
-                    if (isTrueAnswer) {
-                      styleClass = 'border-green-500 bg-[#F6FFED]'
-                      keyBoxClass = 'bg-[#52C41A] text-white'
-                      icon = <CheckCircleFilled className="text-xl text-[#52C41A]" />
-                    } else {
-                      styleClass = 'border-red-500 bg-[#FFF1F0]'
-                      keyBoxClass = 'bg-[#FF4D4F] text-white'
-                      icon = <CloseCircleFilled className="text-xl text-[#FF4D4F]" />
-                    }
-                  }
-                  // Nếu không chọn -> Màu trắng (không lộ đáp án đúng)
-
-                  return (
-                    <div
-                      key={i}
-                      className={`group flex items-stretch overflow-hidden rounded-lg border transition-all ${styleClass}`}
-                      style={{ minHeight: '48px' }}
-                    >
-                      <div
-                        className={`flex w-[48px] min-w-[48px] flex-shrink-0 items-center justify-center text-base font-bold ${keyBoxClass}`}
-                      >
-                        {optKey}
-                      </div>
-                      <div className="flex flex-1 items-center px-4 py-2 text-base font-medium text-gray-800">
-                        {optText}
-                      </div>
-                      {icon && <div className="flex items-center justify-center px-4">{icon}</div>}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+          <div key={index} className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+            <div className="mb-2 text-base font-bold text-gray-800">{index + 1}. {subQ.content || `Question ${index + 1}`}</div>
+            <SideBySideReview userValue={userVal} correctValue={correctVal} isCorrect={!!isCorrect} />
           </div>
         )
       })}
@@ -637,253 +340,50 @@ const GroupAnswerComparison = ({ question }) => {
 }
 
 const ReadingInlineResult = ({ question }) => {
-  // 1. Parse User Response
   let userAnswersMap = {}
-  try {
-    const raw = question.userResponse?.text
-    if (raw) {
-      let parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
-      if (Array.isArray(parsed)) {
-        parsed.forEach(item => {
-          const k = String(item.key || item.questionId).trim()
-          const v = item.value || item.answerText
-          userAnswersMap[k] = v
-        })
-      } else if (typeof parsed === 'object') {
-        Object.entries(parsed).forEach(([k, v]) => (userAnswersMap[String(k).trim()] = v))
-      }
-    }
-  } catch (e) {}
-
-  // 2. Parse Content & Options
-  let optionsMap = {}
   let correctAnswersMap = {}
   try {
-    const rawContent = question.resources?.answerContent || question.AnswerContent
-    const contentObj = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent
-    if (contentObj) {
-      if (contentObj.options && Array.isArray(contentObj.options)) {
-        contentObj.options.forEach(opt => {
-          optionsMap[String(opt.key).trim()] = opt.value
+    const rawUser = question.userResponse?.text
+    if (rawUser) {
+      const parsed = typeof rawUser === 'string' ? JSON.parse(rawUser) : rawUser
+      if (Array.isArray(parsed)) {
+        parsed.forEach(item => {
+          const k = String(item.key || item.id || item.questionId || '').replace(/[^0-9]/g, '').trim().toLowerCase()
+          userAnswersMap[k] = item.value || item.answerText
+        })
+      } else if (typeof parsed === 'object') {
+        Object.entries(parsed).forEach(([k, v]) => {
+          const cleanK = String(k).replace(/[^0-9]/g, '').trim().toLowerCase()
+          userAnswersMap[cleanK] = v
         })
       }
-      if (contentObj.correctAnswer) {
-        if (Array.isArray(contentObj.correctAnswer)) {
-          contentObj.correctAnswer.forEach(ans => (correctAnswersMap[String(ans.key).trim()] = ans.value))
-        } else {
-          Object.entries(contentObj.correctAnswer).forEach(([k, v]) => (correctAnswersMap[String(k).trim()] = v))
-        }
-      }
     }
-  } catch (e) {
-    console.error('Error parsing content:', e)
-  }
-
-  // 3. Xử lý nội dung câu hỏi
-  const rawText = question.questionContent || question.Content || ''
-  const cleanedQuestion = rawText.replace(/\s*\([^)]*\)/g, '')
-
-  const renderGap = gapKey => {
-    const key = gapKey.replace('.', '').trim()
-    const userVal = userAnswersMap[key]
-    const correctVal = correctAnswersMap[key]
-    const currentOptions = optionsMap[key] || []
-    const isExample = key === '0'
-
-    let hasAnswer, isCorrect, displayValue
-
-    if (isExample) {
-      hasAnswer = true
-      isCorrect = true
-      displayValue = correctVal || (currentOptions.length > 0 ? currentOptions[0] : 'Example')
-    } else {
-      hasAnswer = userVal !== undefined && userVal !== null && userVal !== ''
-      isCorrect = hasAnswer && String(userVal).trim().toLowerCase() === String(correctVal).trim().toLowerCase()
-      displayValue = hasAnswer ? userVal : null
-    }
-
-    // --- Logic xác định Class style ---
-    let statusClass = 'select-missed'
-    if (isCorrect) {
-      statusClass = 'select-correct' // Đúng (Xanh)
-    } else if (hasAnswer) {
-      statusClass = 'select-wrong' // Sai (Đỏ)
-    }
-
-    return (
-      <span key={gapKey} className="relative mx-1 inline-block align-middle">
-        <Select
-          value={displayValue}
-          placeholder={<span className="italic text-gray-400">No answer provided</span>}
-          className={`custom-result-select ${statusClass}`}
-          style={{
-            width: 'auto',
-            minWidth: '120px',
-            margin: '0 4px'
-          }}
-          dropdownStyle={{ minWidth: '200px' }}
-          bordered={false}
-        >
-          {currentOptions.map((opt, idx) => {
-            const isOptTrueAnswer = String(opt).trim().toLowerCase() === String(correctVal).trim().toLowerCase()
-            const isOptSelected = String(opt).trim().toLowerCase() === String(userVal).trim().toLowerCase()
-
-            // [UPDATE] Ẩn chỉ báo đúng nếu không chọn
-            const showAsCorrect = isOptTrueAnswer && isOptSelected
-            const showAsWrong = isOptSelected && !isOptTrueAnswer
-
-            return (
-              <Select.Option key={idx} value={opt}>
-                <div className="flex items-center justify-between gap-2">
-                  <span
-                    className={`flex-1 ${
-                      showAsCorrect ? 'font-bold text-green-600' : showAsWrong ? 'text-red-500' : 'text-gray-700'
-                    }`}
-                  >
-                    {opt}
-                  </span>
-                  {showAsCorrect && <CheckCircleFilled className="text-green-500" />}
-                  {showAsWrong && <CloseCircleFilled className="text-red-500" />}
-                </div>
-              </Select.Option>
-            )
-          })}
-        </Select>
-      </span>
-    )
-  }
-
-  return (
-    <div className="mt-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <style>{`
-            .custom-result-select .ant-select-selector {
-                border-radius: 6px !important;
-            }
-            .select-correct .ant-select-selector {
-                background-color: #f6ffed !important;
-                border: 1px solid #52c41a !important;
-            }
-            .select-wrong .ant-select-selector {
-                background-color: #fff1f0 !important;
-                border: 1px solid #ff4d4f !important;
-            }
-            .select-missed .ant-select-selector {
-                background-color: #ffffff !important;
-                border: 1px solid #d9d9d9 !important;
-            }
-        `}</style>
-
-      <div className="whitespace-pre-wrap text-base leading-loose text-gray-800">
-        {cleanedQuestion.split(/(\d+\.)/).map((part, index) => {
-          if (part.match(/^\d+\.$/)) {
-            return renderGap(part)
-          }
-          return <span key={index}>{part}</span>
-        })}
-      </div>
-    </div>
-  )
-}
-
-// --- COMPONENT: ORDERING RESULT (Sửa lại: Ẩn đáp án đúng khi sai) ---
-
-const OrderingResult = ({ question }) => {
-  let userList = []
-  let correctMap = {}
-
-  try {
-    const raw = question.userResponse?.text
-    if (raw) {
-      userList = typeof raw === 'string' ? JSON.parse(raw) : raw
-      if (!Array.isArray(userList)) {
-        userList = []
-      }
-    }
-  } catch (e) {
-    console.error('Error parsing ordering user answer', e)
-  }
-
-  try {
     const rawContent = question.resources?.answerContent || question.AnswerContent
     const contentObj = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent
-    if (contentObj?.correctAnswer && Array.isArray(contentObj.correctAnswer)) {
-      contentObj.correctAnswer.forEach(item => {
-        correctMap[item.value] = String(item.key).trim()
+    if (contentObj?.correctAnswer) {
+      const ans = Array.isArray(contentObj.correctAnswer) ? contentObj.correctAnswer : Object.entries(contentObj.correctAnswer).map(([k,v]) => ({key:k, value:v}))
+      ans.forEach(a => {
+        const k = String(a.key || a.left || '').replace(/[^0-9]/g, '').trim().toLowerCase()
+        if (k) correctAnswersMap[k] = a.value || a.right
       })
     }
-  } catch (e) {
-    console.error('Error parsing ordering correct answer', e)
-  }
-
-  const correctOrders = Object.keys(correctMap)
-    .map(k => Number(k))
-    .sort((a, b) => a - b)
-
-  const displayList = correctOrders.map(order => {
-    const userItem = userList.find(u => Number(u.value) === order)
-    if (userItem) {
-      return {
-        value: order,
-        key: userItem.key,
-        isSkipped: false
-      }
-    } else {
-      return {
-        value: order,
-        key: 'No answer',
-        isSkipped: true
-      }
-    }
-  })
-
-  // Kiểm tra nếu đúng hoàn toàn
-  const isFullyCorrect = displayList.every(item => {
-    if (item.isSkipped) return false
-    const content = String(item.key).trim()
-    return correctMap[item.value] === content
-  })
-
+  } catch (e) {}
+  const rawText = question.questionContent || question.Content || ''
+  const gapKeysFromText = (rawText.match(/\d+\./g) || []).map(k => k.replace(/[^0-9]/g, '').trim().toLowerCase())
+  const allKeys = [...new Set([...gapKeysFromText, ...Object.keys(correctAnswersMap)])].sort((a,b) => parseInt(a) - parseInt(b))
   return (
-    <div className="mt-6 flex max-w-5xl flex-col gap-6">
-      {/* --- PHẦN 1: BÀI LÀM CỦA HỌC SINH --- */}
-      <div className="space-y-4">
-        <div className="mb-2 font-semibold text-gray-600">Your Arrangement:</div>
-        {displayList.map((item, idx) => {
-          const order = item.value
-          const content = String(item.key).trim()
-          let isCorrectPosition = false
-          if (!item.isSkipped) {
-            const correctContentForThisSlot = correctMap[order]
-            isCorrectPosition = correctContentForThisSlot === content
-          }
-
-          let borderClass = 'border-[#ff4d4f] bg-[#fff1f0] border-dashed'
-          let icon = <CloseCircleFilled className="text-[#ff4d4f]" />
-
-          if (isCorrectPosition) {
-            borderClass = 'border-[#52c41a] bg-[#f6ffed] border-dashed'
-            icon = <CheckCircleFilled className="text-[#52c41a]" />
-          } else if (item.isSkipped) {
-            borderClass = 'border-gray-300 bg-gray-50 border-dashed'
-            icon = <CloseCircleFilled className="text-gray-400" />
-          }
-
+    <div className="mt-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="mb-6 whitespace-pre-wrap text-base leading-loose text-gray-800">{rawText}</div>
+      <Divider orientation="left">Answers Comparison</Divider>
+      <div className="flex flex-col gap-4">
+        {allKeys.map((key, idx) => {
+          const userVal = userAnswersMap[key]
+          const correctVal = correctAnswersMap[key]
+          const isCorrect = userVal && correctVal && String(userVal).trim().toLowerCase() === String(correctVal).trim().toLowerCase()
           return (
-            <div
-              key={idx}
-              className={`flex items-center rounded-xl border-2 p-4 transition-all duration-200 ${borderClass}`}
-            >
-              <div
-                className={`mr-4 flex h-10 w-10 flex-shrink-0 select-none items-center justify-center rounded-lg text-lg font-bold shadow-sm ${item.isSkipped ? 'bg-gray-400 text-white' : 'bg-[#003087] text-white'}`}
-              >
-                {order}
-              </div>
-              <div
-                className={`flex-1 text-base font-medium leading-relaxed ${item.isSkipped ? 'italic text-gray-400' : 'text-gray-800'}`}
-              >
-                {content}
-              </div>
-              <div className="ml-4 text-2xl">{icon}</div>
+            <div key={idx}>
+              <div className="mb-1 font-bold text-gray-600">Question {key}.</div>
+              <SideBySideReview userValue={userVal} correctValue={correctVal} isCorrect={!!isCorrect} />
             </div>
           )
         })}
@@ -892,94 +392,52 @@ const OrderingResult = ({ question }) => {
   )
 }
 
-// --- COMPONENT: ANSWER COMPARISON CHUNG ---
+const OrderingResult = ({ question }) => {
+  let userList = []
+  let correctList = []
+  try {
+    const rawUser = question.userResponse?.text
+    if (rawUser) userList = typeof rawUser === 'string' ? JSON.parse(rawUser) : rawUser
+    const rawContent = question.resources?.answerContent || question.AnswerContent
+    const contentObj = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent
+    correctList = contentObj?.correctAnswer || []
+  } catch (e) {}
+  return (
+    <div className="mt-6 flex flex-col gap-6">
+      <SideBySideReview 
+        userValue={Array.isArray(userList) ? userList.map(u => `${u.value}. ${u.key}`).join(' | ') : 'No answer'}
+        correctValue={Array.isArray(correctList) ? correctList.map(c => `${c.key}. ${c.value}`).join(' | ') : 'N/A'}
+        isCorrect={!!question.isCorrect}
+      />
+    </div>
+  )
+}
 
 const AnswerComparison = ({ question }) => {
   const qType = (question.type || question.Type || '').toLowerCase()
   const rawContent = question.resources?.answerContent || question.AnswerContent
-  const isGroupQuestion =
-    qType === 'listening-questions-group' || (rawContent && String(rawContent).includes('listContent'))
-
+  const isGroupQuestion = qType === 'listening-questions-group' || (rawContent && String(rawContent).includes('listContent'))
   if (isGroupQuestion) return <GroupAnswerComparison question={question} />
   if (qType === 'multiple-choice') return <MultipleChoiceResult question={question} />
-
-  const isInlineGapFill =
-    (qType === 'dropdown-list' || qType === 'fill-in-the-blanks') &&
-    /\d+\./.test(question.questionContent || question.Content)
-
-  if (isInlineGapFill) {
-    return <ReadingInlineResult question={question} />
-  }
-
-  if (qType === 'ordering') {
-    return <OrderingResult question={question} />
-  }
-
-  if (qType === 'dropdown-list' || qType === 'matching') {
-    return <DropdownListResult question={question} />
-  }
-
-  // 4. Fallback (Các dạng khác)
-  const { userResponse, correctAnswer, isCorrect } = question
-
-  return (
-    <Row gutter={16} className="mt-4">
-      <Col span={12} xs={24} md={isCorrect ? 12 : 24}>
-        {/* Nếu sai thì cột này full width hoặc vẫn giữ layout tùy ý, ở đây mình set md=24 nếu sai cho cân đối */}
-        <div
-          className={`h-full rounded-lg border p-4 ${isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}
-        >
-          <div className="mb-2 flex items-center gap-2">
-            {isCorrect ? (
-              <CheckCircleFilled className="text-green-500" />
-            ) : (
-              <CloseCircleFilled className="text-red-500" />
-            )}
-            <Text strong>Your Answer</Text>
-          </div>
-          <div className={`text-sm font-semibold ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>
-            {!isCorrect && <div className="mb-1 text-xs font-bold uppercase">Incorrect</div>}
-            {formatAnswerText(userResponse?.text)}
-          </div>
-        </div>
-      </Col>
-
-      {/* [UPDATE] Ẩn cột Correct Answer nếu sai */}
-      {isCorrect && (
-        <Col span={12} xs={24} md={12}>
-          <div className="h-full rounded-lg border border-green-200 bg-green-50 p-4">
-            <div className="mb-2 flex items-center gap-2">
-              <CheckCircleFilled className="text-green-500" />
-              <Text strong>Correct Answer</Text>
-            </div>
-            <div className="text-sm font-semibold text-green-700">{formatAnswerText(correctAnswer)}</div>
-          </div>
-        </Col>
-      )}
-    </Row>
-  )
+  if (qType === 'ordering') return <OrderingResult question={question} />
+  if (qType === 'dropdown-list' || qType === 'matching') return <DropdownListResult question={question} />
+  const isInlineGapFill = /\d+\./.test(question.questionContent || question.Content)
+  if (isInlineGapFill) return <ReadingInlineResult question={question} />
+  return <SideBySideReview userValue={formatAnswerText(question.userResponse?.text)} correctValue={formatAnswerText(question.correctAnswer)} isCorrect={!!question.isCorrect} />
 }
 
 const SubjectiveAnswerView = ({ question }) => {
   const { userResponse } = question
-
   return (
     <div className="mt-4 flex flex-col gap-4">
       <div className="rounded-lg border border-gray-200 bg-[#F8F9FA] p-5">
-        <Title level={5} className="mb-3 text-[#003087]">
-          Your Answer
-        </Title>
-        <div className="whitespace-pre-wrap leading-relaxed text-gray-800">
-          {userResponse?.text || <span className="italic text-gray-400">No response recorded.</span>}
-        </div>
+        <Title level={5} className="mb-3 text-[#003087]">Your Answer</Title>
+        <div className="whitespace-pre-wrap leading-relaxed text-gray-800">{userResponse?.text || <span className="italic text-gray-400">No response recorded.</span>}</div>
       </div>
       {userResponse?.comment && (
         <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
           <div className="mb-2 flex items-center gap-2">
-            <EditOutlined className="text-[#003087]" />
-            <Text strong className="text-lg">
-              Teacher's Comment
-            </Text>
+            <EditOutlined className="text-[#003087]" /><Text strong className="text-lg">Teacher's Comment</Text>
           </div>
           <Paragraph className="mb-0 text-gray-600">{userResponse.comment}</Paragraph>
         </div>
@@ -988,207 +446,70 @@ const SubjectiveAnswerView = ({ question }) => {
   )
 }
 
+const ScoreSummaryCharts = ({ skills, participantInfo }) => {
+  const skillKeys = Object.keys(skills)
+  const skillLabels = skillKeys.map(k => (k === 'grammar' ? 'Grammar & Vocab' : k.charAt(0).toUpperCase() + k.slice(1)))
+  const scores = skillKeys.map(k => skills[k]?.score || 0)
+  const maxScores = skillKeys.map(k => 50)
+  const percentages = scores.map((s, i) => (maxScores[i] > 0 ? Math.round((s / maxScores[i]) * 100) : 0))
+  let totalCorrect = 0
+  let totalIncorrect = 0
+  skillKeys.forEach(k => {
+    if (['speaking', 'writing'].includes(k)) return
+    const questions = skills[k]?.questions || []
+    questions.forEach(q => { if (q.isCorrect) totalCorrect++ ; else totalIncorrect++ })
+  })
+  return (
+    <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <Card className="rounded-xl shadow-sm border-gray-100" title={<Title level={5} className="!mb-0">Skill Performance (%)</Title>}>
+        <div className="flex flex-col gap-4 py-2">
+          {skillLabels.map((label, i) => (
+            <div key={label}>
+              <div className="flex justify-between text-xs mb-1"><span>{label}</span><span className="font-bold">{percentages[i]}%</span></div>
+              <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-blue-600 rounded-full" style={{ width: `${percentages[i]}%` }}></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+      <Card className="rounded-xl shadow-sm border-gray-100" title={<Title level={5} className="!mb-0">Objective Accuracy</Title>}>
+        <div className="flex h-full flex-col items-center justify-center py-4">
+          <div className="relative h-32 w-32">
+            <svg className="h-full w-full" viewBox="0 0 36 36">
+              <path className="stroke-gray-100" strokeWidth="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path className="stroke-green-500" strokeWidth="3" strokeDasharray={`${Math.round((totalCorrect/(totalCorrect+totalIncorrect))*100)}, 100`} fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-2xl font-bold text-gray-800">{totalCorrect}</span>
+              <span className="text-[10px] uppercase text-gray-400">Correct</span>
+            </div>
+          </div>
+          <div className="mt-4 flex gap-4 text-xs font-medium text-gray-500">
+            <div className="flex items-center gap-1"><div className="h-2 w-2 rounded-full bg-green-500"></div>{totalCorrect} Correct</div>
+            <div className="flex items-center gap-1"><div className="h-2 w-2 rounded-full bg-red-400"></div>{totalIncorrect} Incorrect</div>
+          </div>
+        </div>
+      </Card>
+      <Card className="rounded-xl shadow-sm border-gray-100" title={<Title level={5} className="!mb-0">Overall Score</Title>}>
+        <div className="flex h-full flex-col items-center justify-center py-4">
+          <div className="text-5xl font-black text-[#003087]">{participantInfo.totalScore || 0}</div>
+          <div className="mt-1 text-sm font-bold text-gray-400 uppercase">Total Points</div>
+          <Tag color="blue" className="mt-4 px-4 py-1 rounded-full font-bold">Level: {participantInfo.finalLevel || 'N/A'}</Tag>
+        </div>
+      </Card>
+    </div>
+  )
+}
+
 const checkIsFullyCorrect = (q) => {
   const rawUser = q.userResponse?.text
   if (!rawUser || rawUser === '[]' || rawUser === '' || rawUser === '{}') return false
-
-  // 1. Chuẩn hóa - GIỮ NGUYÊN KEY để xử lý sau
-  const normalize = (str) => {
-    const s = String(str || '').trim()
-    return s.toLowerCase()
-  }
-
   try {
-    // --- STEP A: PARSE USER MAP ---
-    let userMap = {}
-    const userParsed = typeof rawUser === 'string' ? JSON.parse(rawUser) : rawUser
-
-    if (Array.isArray(userParsed)) {
-      userParsed.forEach((item) => {
-        // Giữ nguyên key, không normalize ngay
-        const key = item.key || item.left || item.id || item.ID || item.questionId
-        const val = item.value || item.right || item.answer || item.text || item.answerText
-        if (key !== undefined) {
-          userMap[String(key)] = normalize(val)
-        }
-      })
-    } else if (typeof userParsed === 'object' && userParsed !== null) {
-      Object.entries(userParsed).forEach(([k, v]) => {
-        userMap[String(k)] = normalize(v)
-      })
-    } else {
-      userMap['default'] = normalize(userParsed)
-    }
-
-    // --- STEP B: PARSE CORRECT MAP ---
-    let correctMap = {}
-    const rawContent = q.resources?.answerContent || q.AnswerContent
-    if (!rawContent) return !!q.isCorrect
-
-    const contentObj = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent
-    
-    // Đặc biệt xử lý dropdown-list với leftItems
-    const isDropdownList = (q.type || q.Type || '').toLowerCase() === 'dropdown-list'
-    const hasLeftItems = contentObj?.leftItems && Array.isArray(contentObj.leftItems)
-    
-    if (isDropdownList && hasLeftItems) {
-      // Xây dựng mapping giữa leftItems và numeric keys
-      const leftItemToKeyMap = {}
-      contentObj.leftItems.forEach((leftItem, index) => {
-        const numericKey = String(index + 1)
-        const fullLeftItem = String(leftItem).trim()
-        
-        // Map 1: số → leftItem (cho correctMap)
-        if (contentObj.correctAnswer) {
-          const correctAnswer = Array.isArray(contentObj.correctAnswer) 
-            ? contentObj.correctAnswer 
-            : [contentObj.correctAnswer]
-          
-          correctAnswer.forEach(correct => {
-            const correctKey = String(correct.key || correct.left).trim()
-            const correctValue = normalize(correct.value || correct.right)
-            
-            if (correctKey === numericKey) {
-              correctMap[numericKey] = correctValue
-              correctMap[fullLeftItem] = correctValue
-            }
-          })
-        }
-        
-        // Map 2: leftItem → số (cho userMap lookup)
-        leftItemToKeyMap[fullLeftItem] = numericKey
-        leftItemToKeyMap[numericKey] = numericKey
-      })
-      
-      // REMAP userMap: nếu user có key là "1. Speaker A…" → convert sang "1"
-      const remappedUserMap = {}
-      Object.entries(userMap).forEach(([userKey, userValue]) => {
-        const keyStr = String(userKey).trim()
-        
-        // Tìm matching key
-        let matchedKey = null
-        
-        // Thử tìm exact match
-        if (leftItemToKeyMap[keyStr]) {
-          matchedKey = leftItemToKeyMap[keyStr]
-        } else {
-          // Tìm partial match (ví dụ: "1. Speaker A" → "1")
-          for (const [leftItem, numericKey] of Object.entries(leftItemToKeyMap)) {
-            if (keyStr.startsWith(numericKey + '.') || keyStr.startsWith(numericKey + ' ')) {
-              matchedKey = numericKey
-              break
-            }
-          }
-        }
-        
-        if (matchedKey) {
-          remappedUserMap[matchedKey] = userValue
-        } else {
-          // Fallback: giữ nguyên key
-          remappedUserMap[keyStr] = userValue
-        }
-      })
-      
-      // So sánh với correctMap (dùng numeric keys)
-      for (const [correctKey, correctValue] of Object.entries(correctMap)) {
-        // Skip nếu không phải numeric key
-        if (!/^\d+$/.test(correctKey)) continue
-        
-        const userValue = remappedUserMap[correctKey]
-        if (!userValue || userValue !== correctValue) {
-          return false
-        }
-      }
-      
-      return Object.keys(remappedUserMap).length > 0
-    }
-    
-    // --- PHẦN CÒN LẠI GIỮ NGUYÊN ---
-    // Group Questions logic
-    let listSubQuestions = []
-    if (contentObj.groupContent?.listContent) listSubQuestions = contentObj.groupContent.listContent
-    else if (Array.isArray(contentObj) && (q.type?.includes('group') || contentObj[0]?.correctAnswer)) {
-      listSubQuestions = contentObj
-    }
-
-    if (listSubQuestions.length > 0) {
-      // Logic riêng cho Group
-      for (let subQ of listSubQuestions) {
-        const subID = String(subQ.ID || subQ.id).trim()
-        const correctVal = normalize(subQ.correctAnswer)
-        
-        let userVal = userMap[subID]
-        
-        // Nếu không tìm thấy bằng ID, thử tìm bằng index
-        if (userVal === undefined) {
-          const index = listSubQuestions.indexOf(subQ) + 1
-          userVal = userMap[String(index)]
-        }
-        
-        if (!userVal || userVal !== correctVal) return false
-      }
-      return true
-    }
-
-    // Map/Matching Logic (non-dropdown-list)
-    if (contentObj.correctAnswer) {
-      const rawCorrect = contentObj.correctAnswer
-      if (Array.isArray(rawCorrect)) {
-        rawCorrect.forEach(item => {
-          const k = item.key !== undefined ? String(item.key).trim() : String(item.left).trim()
-          const v = normalize(item.value || item.right)
-          if (k) correctMap[k] = v
-        })
-      } else if (typeof rawCorrect === 'object') {
-        Object.entries(rawCorrect).forEach(([k, v]) => {
-          correctMap[String(k).trim()] = normalize(v)
-        })
-      } else {
-        correctMap['default'] = normalize(rawCorrect)
-      }
-    } else if (Object.keys(correctMap).length === 0 && q.correctAnswer) {
-      correctMap['default'] = normalize(q.correctAnswer)
-    }
-    
-    // --- COMPARE ---
-    for (const [key, correctValue] of Object.entries(correctMap)) {
-      if (key === '0' || key === 'example') continue
-      
-      // Tìm user value
-      let userValue = userMap[key]
-      
-      // Nếu không tìm thấy, thử với numeric extraction
-      if (userValue === undefined && /^\d+$/.test(key)) {
-        // Tìm key bắt đầu bằng số
-        const matchingUserKey = Object.keys(userMap).find(userKey => 
-          userKey.trim() === key || 
-          userKey.trim().startsWith(key + '.') || 
-          userKey.trim().startsWith(key + ' ')
-        )
-        if (matchingUserKey) {
-          userValue = userMap[matchingUserKey]
-        }
-      }
-      
-      if (key === 'default') {
-        const userDefault = userMap['default']
-        if (!userDefault || userDefault !== correctValue) return false
-        continue
-      }
-      
-      if (!userValue || userValue !== correctValue) {
-        return false
-      }
-    }
-
-    return true
-  } catch (e) {
-    console.error('Check correct error:', e, 'Question:', q.id)
+    if (q.isCorrect) return true
     return !!q.isCorrect
-  }
+  } catch (e) { return !!q.isCorrect }
 }
-
-// --- MAIN PAGE ---
 
 const ResultPage = () => {
   const { id } = useParams()
@@ -1198,118 +519,108 @@ const ResultPage = () => {
   const [activeTab, setActiveTab] = useState('speaking')
   const [selectedQuestionId, setSelectedQuestionId] = useState(null)
   const [filterPart, setFilterPart] = useState('All Parts')
+  const [accessDeniedMessage, setAccessDeniedMessage] = useState(null)
+
+  // --- APTIS-186: Filter States ---
+  const [fStatus, setFStatus] = useState('all')
+  const [fType, setFType] = useState('all')
+
+  useEffect(() => {
+    const handleContextMenu = (e) => e.preventDefault()
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey && (e.key === 'c' || e.key === 'p' || e.key === 's' || e.key === 'u')) || e.key === 'F12') {
+        e.preventDefault(); message.warning('Security measure: Action disabled on this page.')
+      }
+    }
+    document.addEventListener('contextmenu', handleContextMenu)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        setLoading(true)
+        setLoading(true); setAccessDeniedMessage(null)
         const response = await fetchExamReview(id)
-        if (response && response.data) {
+        if (response?.data) {
           setData(response.data)
           const skills = response.data.skills || {}
           const firstSkill = Object.keys(skills).find(k => skills[k]?.questions?.length > 0)
           if (firstSkill) setActiveTab(firstSkill)
         }
       } catch (error) {
-        console.error('Load result error:', error)
-        message.error('Unable to download test results.')
-      } finally {
-        setLoading(false)
-      }
+        if (error.response && error.response.status === 403) setAccessDeniedMessage(error.response.data.message || 'Access Denied')
+        else message.error('Unable to download test results.')
+      } finally { setLoading(false) }
     }
     if (id) loadData()
   }, [id])
 
-  useEffect(() => {
-    if (data && data.skills && data.skills[activeTab]?.questions?.length > 0) {
-      setSelectedQuestionId(data.skills[activeTab].questions[0].id)
-    } else {
-      setSelectedQuestionId(null)
-    }
-  }, [activeTab, data])
+  const currentSkillData = useMemo(() => {
+    return data?.skills?.[activeTab] || { questions: [] }
+  }, [data, activeTab])
 
-  const currentSkillData = data?.skills[activeTab]
-  const currentQuestion = currentSkillData?.questions.find(q => q.id === selectedQuestionId)
-  const maxScore = ['speaking', 'writing'].includes(activeTab) ? 50 : 20
+  const sortedCurrentQuestions = useMemo(() => {
+    return sortQuestionsForReview(currentSkillData?.questions || [])
+  }, [currentSkillData])
+
+  const availableTypes = useMemo(() => {
+    const qs = sortedCurrentQuestions
+    const types = qs.map(q => (q.type || q.Type || 'Other').toLowerCase())
+    return ['all', ...new Set(types)]
+  }, [sortedCurrentQuestions])
+
+  const filteredQuestions = useMemo(() => {
+    let list = [...sortedCurrentQuestions]
+    if (fStatus === 'correct') list = list.filter(q => q.isCorrect)
+    if (fStatus === 'incorrect') list = list.filter(q => !q.isCorrect)
+    if (fType !== 'all') list = list.filter(q => (q.type || q.Type || '').toLowerCase() === fType)
+    return list
+  }, [sortedCurrentQuestions, fStatus, fType])
+
+  useEffect(() => {
+    if (filteredQuestions.length > 0 && !filteredQuestions.some(q => q.id === selectedQuestionId)) {
+      setSelectedQuestionId(filteredQuestions[0].id)
+    }
+  }, [filteredQuestions])
+
+  const currentQuestion = sortedCurrentQuestions.find(q => q.id === selectedQuestionId)
+  const maxScore = 50
+  const countGreenQuestions = useMemo(() => {
+    if (!sortedCurrentQuestions?.length) return 0
+    return sortedCurrentQuestions.filter(q => checkIsFullyCorrect(q)).length
+  }, [sortedCurrentQuestions])
 
   const speakingGroups = useMemo(() => {
-    if (activeTab !== 'speaking' || !currentSkillData?.questions) return {}
-    const allQuestions = currentSkillData.questions
-    const groups = {}
-    const chunkSize = 3
-    for (let i = 0; i < allQuestions.length; i += chunkSize) {
-      const chunk = allQuestions.slice(i, i + chunkSize)
-      const partIndex = Math.floor(i / chunkSize) + 1
-      const partName = `Part ${partIndex}`
+    if (activeTab !== 'speaking' || !sortedCurrentQuestions?.length) return {}
+    const groups = {}; const chunkSize = 3
+    for (let i = 0; i < sortedCurrentQuestions.length; i += chunkSize) {
+      const partName = `Part ${Math.floor(i / chunkSize) + 1}`
       if (filterPart !== 'All Parts' && partName !== filterPart) continue
-      groups[partName] = chunk
+      groups[partName] = sortedCurrentQuestions.slice(i, i + chunkSize)
     }
     return groups
-  }, [activeTab, currentSkillData, filterPart])
+  }, [activeTab, sortedCurrentQuestions, filterPart])
 
-  const partOptions = useMemo(() => {
-    if (!currentSkillData?.questions || activeTab !== 'speaking') return []
-    const totalQuestions = currentSkillData.questions.length
-    const chunkSize = 3
-    const numberOfParts = Math.ceil(totalQuestions / chunkSize)
-    const parts = []
-    for (let i = 1; i <= numberOfParts; i++) {
-      parts.push(`Part ${i}`)
-    }
-    return ['All Parts', ...parts]
-  }, [currentSkillData, activeTab])
-
-  if (loading) return <Spin size="large" className="flex h-screen items-center justify-center" />
+  if (loading && !data) return <Spin size="large" className="flex h-screen items-center justify-center" />
+  if (accessDeniedMessage) {
+    return (
+      <Layout className="min-h-screen bg-white"><SharedHeader /><Content className="mx-auto flex w-full max-w-7xl items-center justify-center p-6" style={{ marginTop: '10vh' }}>
+        <div className="flex max-w-lg flex-col items-center justify-center rounded-xl border border-red-200 bg-red-50 p-10 text-center shadow-sm">
+          <WarningOutlined className="mb-4 text-5xl text-red-500" /><Title level={3} className="!mb-2 !text-red-700">Access Denied</Title><Text className="text-lg text-red-600">{accessDeniedMessage}</Text><div className="mt-6"><Button type="primary" onClick={() => navigate(-1)} size="large" danger>Go Back</Button></div></div>
+      </Content></Layout>
+    )
+  }
   if (!data) return <Empty description="No data found" className="mt-20" />
 
-  const tabIcons = {
-    speaking: <SoundOutlined />,
-    listening: <CustomerServiceOutlined />,
-    reading: <ReadOutlined />,
-    writing: <EditOutlined />,
-    grammar: <AppstoreOutlined />
-  }
-
-  const isSpeakingTab = activeTab === 'speaking'
-  const leftColSpan = isSpeakingTab ? 0 : 6
-  const rightColSpan = isSpeakingTab ? 24 : 18
-
   const QuestionHeaderDisplay = ({ question }) => {
-    const rawContent = question.resources?.answerContent || question.AnswerContent
-    const answerContent = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent
-    const isGroupQuestion =
-      question.type === 'listening-questions-group' ||
-      question.Type === 'listening-questions-group' ||
-      answerContent?.groupContent?.listContent
-    const isInlineGapFill =
-      (question.type === 'dropdown-list' || question.Type === 'dropdown-list') &&
-      /\d+\./.test(question.questionContent || question.Content)
-
-    let isMatchingHeadings = false
-    if (qType === 'dropdown-list' || qType === 'matching') {
-      try {
-        const items = answerContent?.leftItems || answerContent?.options?.map(o => o.key) || []
-        if (items.length > 0) {
-          const hasParagraphStyle = items.some(
-            item => String(item).trim().startsWith('Paragraph') || String(item).length > 50
-          )
-          if (hasParagraphStyle) {
-            isMatchingHeadings = true
-          }
-        }
-      } catch (e) {}
-    }
-
     const formatPartContent = content => {
       if (!content) return null
-      if (content.startsWith('Part')) {
-        return content.includes(':') ? content.split(':')[1].trim() : content.split('-').slice(1).join(' ').trim()
-      }
-      return content
+      return content.startsWith('Part') ? (content.includes(':') ? content.split(':')[1].trim() : content.split('-').slice(1).join(' ').trim()) : content
     }
-
-    const instructionText = formatPartContent(question.partContent)
-
     return (
       <div className="mb-4 rounded-lg bg-[#F5F8FF] p-5">
         {question.resources?.audio && renderAudioPlayer(question.resources.audio)}
@@ -1342,196 +653,107 @@ const ResultPage = () => {
     )
   }
 
-  const qType = currentQuestion?.type || currentQuestion?.Type || ''
-  const rawContent = currentQuestion?.resources?.answerContent || currentQuestion?.AnswerContent
-  const isGroupQuestion =
-    qType === 'listening-questions-group' || (rawContent && String(rawContent).includes('listContent'))
-
-  // Xác định câu hỏi hiện tại có đúng không để ẩn/hiện explanation
-  const isCurrentQuestionFullyCorrect = currentQuestion && checkIsFullyCorrect(currentQuestion)
+  const preventCopy = (e) => { e.preventDefault(); message.warning('Security measure: Copy/Cut/Paste is disabled on this page.'); return false }
 
   return (
-    <Layout className="min-h-screen bg-white">
+    <Layout className="min-h-screen bg-white select-none" onCopy={preventCopy} onCut={preventCopy} onPaste={preventCopy}>
+      <style>{`@media print { body { display: none !important; } } .select-none { user-select: none; }`}</style>
       <SharedHeader />
       <Content className="mx-auto w-full max-w-7xl p-6">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <Button icon={<LeftOutlined />} onClick={() => navigate(-1)} className="border-none px-0 shadow-none">
-            Back in history
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button icon={<LeftOutlined />} onClick={() => navigate(-1)} className="border-none px-0 shadow-none">
+              Back in history
+            </Button>
+            <Button 
+              type="primary" 
+              onClick={() => navigate(`/review/${id}`)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Detailed Review
+            </Button>
+          </div>
           <div className="flex items-center gap-3">
-            <Tag color="blue" className="px-3 py-1 text-sm">
-              Level: {data.participantInfo.finalLevel || 'N/A'}
-            </Tag>
-            <Tag color="green" className="px-3 py-1 text-sm">
-              Total score: {data.participantInfo.totalScore || 0}
-            </Tag>
+            <Tag color="blue" className="px-3 py-1 text-sm">Level: {data.participantInfo.finalLevel || 'N/A'}</Tag>
+            <Tag color="green" className="px-3 py-1 text-sm">Total score: {data.participantInfo.totalScore || 0}</Tag>
           </div>
         </div>
+        <div className="mb-6"><Title level={2} className="!mb-1 text-[#111827]">Answer Review</Title><Text type="secondary">Review your answers and learn from detailed explanations</Text></div>
+        
+        <ScoreSummaryCharts skills={data.skills} participantInfo={data.participantInfo} />
 
-        <div className="mb-6 flex items-start justify-between">
-          <div>
-            <Title level={2} className="!mb-1 !text-[#111827]">
-              Full English Proficiency Exam - Answer Review
-            </Title>
-            <Text type="secondary">Review your answers and learn from detailed explanations</Text>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <div className="text-sm text-gray-500">
-              Completed on {new Date(data.participantInfo.date).toLocaleDateString()}
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          items={Object.keys(data.skills).map(key => ({
+            key,
+            label: <div className="flex items-center gap-2 px-2 py-1">
+              {{speaking: <SoundOutlined />, listening: <CustomerServiceOutlined />, reading: <ReadOutlined />, writing: <EditOutlined />, grammar: <AppstoreOutlined />}[key]}
+              <span className="capitalize">{key === 'grammar' ? 'Grammar & Vocabulary' : key}</span>
             </div>
-          </div>
-        </div>
-
-        <div className="mb-6 border-b border-gray-200">
-          <Tabs
-            activeKey={activeTab}
-            onChange={setActiveTab}
-            items={Object.keys(data.skills).map(key => ({
-              key,
-              label: (
-                <div className="flex items-center gap-2 px-2 py-1">
-                  {tabIcons[key]}
-                  <span className="capitalize">{key === 'grammar' ? 'Grammar & Vocabulary' : key}</span>
-                </div>
-              )
-            }))}
-            className="custom-tabs"
-          />
-        </div>
+          }))}
+          className="mb-6 border-b border-gray-200"
+        />
 
         <div className="mb-8 flex flex-col items-center justify-between rounded-xl bg-[#003087] p-6 text-white shadow-lg md:flex-row">
-          <div>
-            <h2 className="mb-1 text-2xl font-bold capitalize">
-              {activeTab === 'grammar' ? 'Grammar & Vocabulary' : activeTab} Performance
-            </h2>
-            <p className="text-blue-100 opacity-90">Great job! You demonstrated strong communication skills.</p>
-          </div>
+          <div><h2 className="mb-1 text-2xl font-bold capitalize">{activeTab} Performance</h2><p className="text-blue-100 opacity-90">Great job! You demonstrated strong communication skills.</p></div>
           <div className="mt-4 flex gap-8 md:mt-0">
-            <div className="text-center">
-              <div className="text-4xl font-bold">
-                {currentSkillData?.score || 0}
-                <span className="text-2xl font-normal text-blue-300">/{maxScore}</span>
-              </div>
-              <div className="text-xs uppercase tracking-wider opacity-80">Score</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold">
-                {['writing', 'speaking'].includes(activeTab)
-                  ? '--'
-                  : `${currentSkillData?.questions.filter(q => q.isCorrect).length}/${currentSkillData?.questions.length}`}
-              </div>
-              <div className="text-xs uppercase tracking-wider opacity-80">Correct</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold">{data.participantInfo.timeSpent || '28m'}</div>
-              <div className="text-xs uppercase tracking-wider opacity-80">Time Spent</div>
-            </div>
+            <div className="text-center"><div className="text-4xl font-bold">{currentSkillData?.score || 0}<span className="text-2xl font-normal text-blue-300">/{maxScore}</span></div><div className="text-xs uppercase opacity-80">Score</div></div>
+            <div className="text-center"><div className="text-4xl font-bold">{['writing', 'speaking'].includes(activeTab) ? '--' : `${countGreenQuestions}/${sortedCurrentQuestions.length}`}</div><div className="text-xs uppercase tracking-wider opacity-80">Correct</div></div>
+            <div className="text-center"><div className="text-4xl font-bold">{data.participantInfo.timeSpent || '28m'}</div><div className="text-xs uppercase tracking-wider opacity-80">Time Spent</div></div>
           </div>
         </div>
 
         <Row gutter={24}>
-          {(!isSpeakingTab || (isSpeakingTab && partOptions.length > 0)) && (
-            <Col xs={24} lg={isSpeakingTab ? 24 : 6} className="mb-6">
-              {isSpeakingTab ? (
-                <div className="mb-4 flex justify-end">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-gray-700">Filter by Part:</span>
-                    <Select value={filterPart} onChange={setFilterPart} className="w-[200px]" size="large">
-                      {partOptions.map(p => (
-                        <Select.Option key={p} value={p}>
-                          {p}
-                        </Select.Option>
-                      ))}
-                    </Select>
-                  </div>
+          {!(activeTab === 'speaking' || activeTab === 'writing') && (
+            <Col xs={24} lg={6} className="mb-6">
+              <Card className="rounded-lg border border-gray-200 shadow-sm" bodyStyle={{ padding: '16px' }}>
+                <div className="mb-4 flex items-center justify-between">
+                  <Title level={5} className="!mb-0">Question Navigator</Title>
+                  {(fStatus !== 'all' || fType !== 'all') && (
+                    <Button type="link" size="small" onClick={() => { setFStatus('all'); setFType('all'); }} className="p-0 text-xs">Reset</Button>
+                  )}
                 </div>
-              ) : (
-                <Card className="rounded-lg border border-gray-200 shadow-sm">
-                  <Title level={5} className="mb-4">
-                    Filters
-                  </Title>
-                  <div className="mb-6">
-                    <Text className="mb-2 block text-sm text-gray-600">Filter by Part</Text>
-                    <Select defaultValue="All Parts" className="w-full" size="large">
-                      <Select.Option value="All Parts">All Parts</Select.Option>
-                    </Select>
-                  </div>
-                  <Title level={5} className="mb-3 text-sm text-gray-600">
-                    Question Navigator
-                  </Title>
-                  <div className="grid grid-cols-5 gap-2">
-                    {currentSkillData?.questions.map((q, index) => {
-                      const isSelected = q.id === selectedQuestionId
-                      const isTrulyCorrect = checkIsFullyCorrect(q)
-                      // console.log(isTrulyCorrect, 'isTrulyCorrect123123');
-                      
-                      let bgColor = isSelected
-                        ? '!bg-[#003087] !text-white'
-                        : isTrulyCorrect
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-red-50 text-red-600'
-                      if (['writing'].includes(activeTab) && !isSelected)
-                        bgColor = q.userResponse ? 'bg-blue-50 text-blue-600' : 'bg-gray-100'
-                      return (
-                        <div
-                          key={q.id}
-                          onClick={() => setSelectedQuestionId(q.id)}
-                          className={`flex h-10 cursor-pointer items-center justify-center rounded font-semibold transition-all ${bgColor} hover:opacity-80`}
-                        >
-                          {index + 1}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </Card>
-              )}
+                <Segmented block size="small" value={fStatus} onChange={setFStatus} className="mb-3" options={[{ label: 'All', value: 'all' }, { label: 'Correct', value: 'correct' }, { label: 'Wrong', value: 'incorrect' }]} />
+                <Select size="small" value={fType} onChange={setFType} className="mb-4 w-full" options={availableTypes.map(type => ({ label: type === 'all' ? 'All Types' : type.charAt(0).toUpperCase() + type.slice(1), value: type }))} />
+                <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">Found: {filteredQuestions.length} Questions</div>
+                <div className="grid grid-cols-5 gap-2">
+                  {filteredQuestions.map(q => {
+                    const isSelected = q.id === selectedQuestionId
+                    const isTrulyCorrect = checkIsFullyCorrect(q)
+                    let bgColor = isSelected ? '!bg-[#003087] !text-white' : isTrulyCorrect ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-600'
+                    return <div key={q.id} onClick={() => setSelectedQuestionId(q.id)} className={`flex h-10 cursor-pointer items-center justify-center rounded font-semibold transition-all ${bgColor} hover:opacity-80`}>{sortedCurrentQuestions.findIndex(item => item.id === q.id) + 1}</div>
+                  })}
+                </div>
+              </Card>
             </Col>
           )}
-
-          <Col xs={24} lg={rightColSpan}>
-            {isSpeakingTab ? (
+          <Col xs={24} lg={(activeTab === 'speaking' || activeTab === 'writing') ? 24 : 18}>
+            {activeTab === 'speaking' ? (
+              <div className="flex flex-col gap-6">{Object.entries(speakingGroups).map(([partName, questions]) => (<SpeakingPartView key={partName} partName={partName} questions={questions} />))}</div>
+            ) : activeTab === 'writing' ? (
               <div className="flex flex-col gap-6">
-                {Object.keys(speakingGroups).length > 0 ? (
-                  Object.entries(speakingGroups).map(([partName, questions]) => (
-                    <SpeakingPartView key={partName} partName={partName} questions={questions} />
-                  ))
-                ) : (
-                  <Empty description="No speaking questions found" />
-                )}
+                {sortedCurrentQuestions.map((q, idx) => (
+                  <div key={q.id || idx} className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                    <Title level={4} className="!mb-4">{`Writing Task ${idx + 1}:`}</Title>
+                    <QuestionHeaderDisplay question={q} />
+                    <SubjectiveAnswerView question={q} />
+                  </div>
+                ))}
               </div>
             ) : currentQuestion ? (
               <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                <div className="mb-4">
-                  <Title level={4} className="!mb-4">{`Question ${currentSkillData.questions.indexOf(currentQuestion) + 1}:`}</Title>
-                  <QuestionHeaderDisplay question={currentQuestion} />
-                </div>
-                {activeTab === 'writing' ? (
-                  <SubjectiveAnswerView question={currentQuestion} />
-                ) : (
-                  !isGroupQuestion && <AnswerComparison question={currentQuestion} />
-                )}
-
-                {/* [UPDATE] Chỉ hiện Explanation nếu câu trả lời là ĐÚNG */}
-                {activeTab !== 'writing' && !isGroupQuestion && isCurrentQuestionFullyCorrect && (
+                <Title level={4} className="!mb-4">{`Question ${sortedCurrentQuestions.findIndex(item => item.id === currentQuestion.id) + 1}:`}</Title>
+                <QuestionHeaderDisplay question={currentQuestion} />
+                <AnswerComparison question={currentQuestion} />
+                {checkIsFullyCorrect(currentQuestion) && (
                   <div className="mt-6 rounded-lg border border-blue-100 bg-[#F0F9FF] p-5">
-                    <div className="mb-2 flex items-center gap-2 text-[#003087]">
-                      <div className="rounded bg-blue-100 p-1 text-blue-600">
-                        <BulbFilled />
-                      </div>
-                      <span className="text-lg font-bold">Explanation</span>
-                    </div>
-                    <div className="leading-relaxed text-gray-700">
-                      The correct answer is derived from the key information provided in the question text.
-                    </div>
+                    <div className="mb-2 flex items-center gap-2 text-[#003087]"><BulbFilled className="text-xl" /><span className="text-lg font-bold">Explanation</span></div>
+                    <div className="leading-relaxed text-gray-700">The correct answer is derived from the key information provided in the question text.</div>
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="flex h-96 flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 text-gray-400">
-                <WarningOutlined className="mb-2 text-4xl" />
-                <span>Select a question to view details</span>
-              </div>
-            )}
+            ) : <Empty />}
           </Col>
         </Row>
       </Content>

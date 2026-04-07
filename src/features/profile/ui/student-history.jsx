@@ -85,19 +85,32 @@ const StudentHistory = ({ userId }) => {
       align: 'center',
       width: 180,
       render: (text, record) => (
-        <Link
-          to={`/result/${record.id}`}
-          style={{
-            color: '#1890ff',
-            fontWeight: 600,
-            textDecoration: 'underline',
-            cursor: 'pointer',
-            display: 'block', // Giúp vùng bấm rộng hơn
-            width: '100%'
-          }}
-        >
-          {text}
-        </Link>
+        <div className="flex flex-col gap-1">
+          <Link
+            to={`/result/${record.id}`}
+            style={{
+              color: '#1890ff',
+              fontWeight: 600,
+              textDecoration: 'underline',
+              cursor: 'pointer',
+              display: 'block',
+              width: '100%'
+            }}
+          >
+            {text}
+          </Link>
+          <Link
+            to={`/review/${record.id}`}
+            style={{
+              color: '#52c41a',
+              fontSize: '12px',
+              fontWeight: 500,
+              textDecoration: 'underline'
+            }}
+          >
+            Detailed Review
+          </Link>
+        </div>
       )
     },
     {
@@ -130,7 +143,7 @@ const StudentHistory = ({ userId }) => {
       key: 'speaking',
       align: 'center',
       width: 150,
-      render: (_, record) => record.isPublished ? renderScore(record.speakingScore, record.speakingLevel) : <span style={{color: '#999'}}>-</span>
+      render: (_, record) => record.isPublished ? renderScore(record.speakingScore, record.speakingLevel) : <span style={{ color: '#999' }}>-</span>
     },
     {
       title: 'Writing',
@@ -138,7 +151,7 @@ const StudentHistory = ({ userId }) => {
       key: 'writing',
       align: 'center',
       width: 150,
-      render: (_, record) => record.isPublished ? renderScore(record.writingScore, record.writingLevel) : <span style={{color: '#999'}}>-</span>
+      render: (_, record) => record.isPublished ? renderScore(record.writingScore, record.writingLevel) : <span style={{ color: '#999' }}>-</span>
     },
     {
       title: 'Total',
@@ -146,8 +159,8 @@ const StudentHistory = ({ userId }) => {
       key: 'total',
       align: 'center',
       width: 100,
-      render: (_, record) => 
-        record.isPublished ? <span style={{ fontSize: '16px', color: '#000' }}>{record.total ?? '-'}</span> : <span style={{color: '#999'}}>-</span>
+      render: (_, record) =>
+        record.isPublished ? <span style={{ fontSize: '16px', color: '#000' }}>{record.total ?? '-'}</span> : <span style={{ color: '#999' }}>-</span>
     },
     {
       title: 'Final Level',
@@ -202,6 +215,7 @@ const StudentHistory = ({ userId }) => {
         }}
       >
         <Input
+          maxLength={255}
           placeholder="Search session name"
           prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
           value={searchText}
