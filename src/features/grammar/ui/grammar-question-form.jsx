@@ -198,7 +198,7 @@ const QuestionForm = ({ currentPart, answers, setUserAnswer, onSubmit, questionN
     if (!currentPart) {
       return
     }
-    const newAnswers = { ...answers, [currentPart.ID]: answer }
+    const newAnswers = { ...answers, [`answer-${currentPart.ID}`]: answer }
     setUserAnswer(newAnswers)
     localStorage.setItem('grammarAnswers', JSON.stringify(newAnswers))
   }
@@ -230,7 +230,7 @@ const QuestionForm = ({ currentPart, answers, setUserAnswer, onSubmit, questionN
       )}
       {currentPart.Type === 'multiple-choice' && <div className="mb-6">{formatDialogueContent(questionContent)}</div>}
       <Form.Item
-        key={`answer-${currentPart.ID}`}
+        key={`answer-container-${currentPart.ID}`}
         name={`answer-${currentPart.ID}`}
         initialValue={getAnswerValue(answers, currentPart.ID) || ''}
       >
@@ -257,21 +257,21 @@ const QuestionForm = ({ currentPart, answers, setUserAnswer, onSubmit, questionN
             <CustomMatchingQuestionEquals
               leftItems={currentPart.AnswerContent.leftItems}
               rightItems={currentPart.AnswerContent.rightItems}
-              userAnswer={userAnswer}
+              userAnswer={userAnswer || []}
               setUserAnswer={handleAnswerSubmit}
             />
           ) : isQuestion30 ? (
             <CustomMatchingQuestionPlus
               leftItems={currentPart.AnswerContent.leftItems}
               rightItems={currentPart.AnswerContent.rightItems}
-              userAnswer={userAnswer}
+              userAnswer={userAnswer || []}
               setUserAnswer={handleAnswerSubmit}
             />
           ) : (
             <MatchingQuestion
               leftItems={currentPart.AnswerContent.leftItems}
               rightItems={currentPart.AnswerContent.rightItems}
-              userAnswer={userAnswer}
+              userAnswer={userAnswer || []}
               setUserAnswer={handleAnswerSubmit}
             />
           )

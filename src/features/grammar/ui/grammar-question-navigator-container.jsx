@@ -34,14 +34,14 @@ const QuestionNavigatorContainer = ({
           <QuestionNavigator
             values={data?.Parts.map(question => {
               const isFlagged = flaggedQuestions[`answer-${question.ID}`] || false
+              const answer = getAnswerValue(answers, question.ID)
               let isAnswered = false
 
               if (question.Type === 'matching') {
-                const answerArray = getAnswerValue(answers, question.ID)
-                isAnswered = Array.isArray(answerArray) && answerArray.length === 5
+                const expectedLength = question.AnswerContent?.leftItems?.length || 0
+                isAnswered = Array.isArray(answer) && expectedLength > 0 && answer.length === expectedLength
               } else {
-                const answerValue = getAnswerValue(answers, question.ID)
-                isAnswered = answerValue !== undefined && answerValue !== null && answerValue !== ''
+                isAnswered = typeof answer === 'string' ? answer.trim() !== '' : answer !== undefined && answer !== null && answer !== ''
               }
 
               let type = 'unanswered'

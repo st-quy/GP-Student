@@ -29,8 +29,8 @@ const MultipleChoice = ({
     }
   }, [questionData.AnswerContent])
   useMemo(() => {
-    if (userAnswer && userAnswer[questionData.ID]) {
-      setSelectedOption(userAnswer[questionData.ID])
+    if (userAnswer && userAnswer[`answer-${questionData.ID}`]) {
+      setSelectedOption(userAnswer[`answer-${questionData.ID}`])
     }
   }, [userAnswer, questionData.ID])
 
@@ -45,7 +45,7 @@ const MultipleChoice = ({
     setSelectedOption(optionValue)
     setUserAnswer(prev => ({
       ...prev,
-      [questionData.ID]: optionValue
+      [`answer-${questionData.ID}`]: optionValue
     }))
 
     if (setUserAnswerSubmit) {
@@ -56,7 +56,7 @@ const MultipleChoice = ({
       }
       setUserAnswerSubmit(prev => ({
         ...prev,
-        [questionData.ID]: newAnswerSubmit
+        [`answer-${questionData.ID}`]: newAnswerSubmit
       }))
     }
 

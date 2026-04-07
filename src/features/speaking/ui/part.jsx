@@ -141,27 +141,8 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
   }, [isActive, isTimerRunning, phase, currentTimePair])
 
   useEffect(() => {
-    if (!isRecording && phase === 'answering' && countdown === 0 && !isAutoSubmitting) {
-      setIsAutoSubmitting(true)
-      autoSubmitTimerRef.current = setTimeout(() => {
-        if (buttonRef.current) {
-          buttonRef.current.click()
-        }
-      }, 2000)
-
-      const timerElement = document.createElement('div')
-      timerElement.dataset.autoSubmitTimer = autoSubmitTimerRef.current
-      document.body.appendChild(timerElement)
-    }
-
-    return () => {
-      if (autoSubmitTimerRef.current) {
-        clearTimeout(autoSubmitTimerRef.current)
-        const timerElement = document.querySelector('[data-auto-submit-timer]')
-        if (timerElement) {
-          timerElement.remove()
-        }
-      }
+    if (!isRecording && phase === 'answering' && countdown === 0) {
+      console.info('Recording ended. Waiting for student to click next.')
     }
   }, [isRecording, phase, countdown])
 
@@ -248,8 +229,18 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
       clearTimeout(autoSubmitTimerRef.current)
     }
     setIsButtonLoading(true)
+
+    // Force stop recording if active
+    if (mediaRecorderRef?.state === 'recording') {
+      mediaRecorderRef.stop()
+      // Give it a tiny bit of time to trigger onstop and set isUploading
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+
     if (isUploading) {
-      while (isUploading) {
+      const startTime = Date.now()
+      while (isUploading && Date.now() - startTime < 10000) {
+        // Wait up to 10s for upload
         await new Promise(resolve => setTimeout(resolve, 100))
       }
     }
@@ -268,8 +259,18 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
       clearTimeout(autoSubmitTimerRef.current)
     }
     setIsButtonLoading(true)
+
+    // Force stop recording if active
+    if (mediaRecorderRef?.state === 'recording') {
+      mediaRecorderRef.stop()
+      // Give it a tiny bit of time to trigger onstop and set isUploading
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+
     if (isUploading) {
-      while (isUploading) {
+      const startTime = Date.now()
+      while (isUploading && Date.now() - startTime < 10000) {
+        // Wait up to 10s for upload
         await new Promise(resolve => setTimeout(resolve, 100))
       }
     }
