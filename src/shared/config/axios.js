@@ -1,35 +1,8 @@
 import axios from 'axios'
 
-const resolveBaseUrl = () => {
-  const configuredBaseUrl = import.meta.env.VITE_BASE_URL?.trim()
-
-  if (!configuredBaseUrl) {
-    return `${window.location.origin}/api`
-  }
-
-  try {
-    const resolvedUrl = new URL(configuredBaseUrl, window.location.origin)
-
-    if (window.location.protocol === 'https:' && resolvedUrl.protocol === 'http:') {
-      resolvedUrl.protocol = 'https:'
-    }
-
-    if (
-      ['localhost', '127.0.0.1'].includes(resolvedUrl.hostname) &&
-      !['localhost', '127.0.0.1'].includes(window.location.hostname)
-    ) {
-      resolvedUrl.hostname = window.location.hostname
-    }
-
-    return resolvedUrl.toString().replace(/\/$/, '')
-  } catch (error) {
-    return configuredBaseUrl.replace(/\/$/, '')
-  }
-}
-
 const axiosInstance = axios.create({
   // @ts-ignore
-  baseURL: resolveBaseUrl(),
+  baseURL: import.meta.env.VITE_BASE_URL,
   headers: {
     'Content-Type': 'application/json'
   }

@@ -97,20 +97,24 @@ const submitSpeakingAnswer = async () => {
   try {
     const speakingAnswer = JSON.parse(speakingAnswerStr)
 
-    // Validate questions before submitting
+    // Validation: Ensure questions array is not empty
     if (!speakingAnswer.questions || speakingAnswer.questions.length === 0) {
-      message.warning('No answers recorded. Please complete the test before submitting.')
-      throw new Error('No answers recorded')
+      console.error('Cannot submit: speakingAnswer.questions is empty', speakingAnswer)
+      throw new Error('Questions are required and must be a non-empty array')
     }
+
+    console.info('Submitting speaking answer:', {
+      sessionId: speakingAnswer.sessionId,
+      skillName: speakingAnswer.skillName,
+      questionCount: speakingAnswer.questions.length
+    })
 
     const response = await axiosInstance.post(`/student-answers`, speakingAnswer)
     localStorage.removeItem('speaking_answer')
     return response.data
   } catch (error) {
-    if (error.message !== 'No answers recorded') {
-      message.error('Error submitting speaking answer')
-      console.error('Error details:', error.response?.data || error.message)
-    }
+    message.error('Error submitting speaking answer')
+    console.error('Error details:', error.response?.data || error.message)
     throw error
   }
 }

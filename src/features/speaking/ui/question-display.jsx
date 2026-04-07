@@ -15,7 +15,6 @@ const QuestionDisplay = ({
 }) => {
   const [imageUrl, setImageUrl] = useState(null)
   const [audioUrl, setAudioUrl] = useState(null)
-  const [audioError, setAudioError] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [buttonClicked, setButtonClicked] = useState(false)
   const pendingActionRef = useRef(null)
@@ -29,23 +28,16 @@ const QuestionDisplay = ({
       setImageUrl(null)
     }
 
-    setAudioError(false)
-
-    try {
-      const speakingAnswerStr = localStorage.getItem('speaking_answer')
-      if (speakingAnswerStr && currentQuestion) {
-        const speakingAnswer = JSON.parse(speakingAnswerStr)
-        const questionAnswer = speakingAnswer.questions?.find(q => q.questionId === currentQuestion.ID)
-        if (questionAnswer && questionAnswer.answerAudio) {
-          setAudioUrl(questionAnswer.answerAudio)
-        } else {
-          setAudioUrl(null)
-        }
+    const speakingAnswerStr = localStorage.getItem('speaking_answer')
+    if (speakingAnswerStr && currentQuestion) {
+      const speakingAnswer = JSON.parse(speakingAnswerStr)
+      const questionAnswer = speakingAnswer.questions.find(q => q.questionId === currentQuestion.ID)
+      if (questionAnswer && questionAnswer.answerAudio) {
+        setAudioUrl(questionAnswer.answerAudio)
       } else {
         setAudioUrl(null)
       }
-    } catch (error) {
-      console.error('Error parsing speaking answer from localStorage:', error)
+    } else {
       setAudioUrl(null)
     }
   }, [currentQuestion])
@@ -137,7 +129,7 @@ const QuestionDisplay = ({
             </div>
             {isPart4 ? (
               <div className="grid grid-cols-1 gap-2 lg:gap-4">
-                {(data.Questions || []).map((question, index) => (
+                {data.Questions.map((question, index) => (
                   <div
                     key={index}
                     className="group relative rounded-xl bg-white p-3 shadow-md transition-all duration-300 hover:shadow-lg lg:p-4"
@@ -149,35 +141,21 @@ const QuestionDisplay = ({
                       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#003087] text-xs font-bold text-white lg:h-8 lg:w-8 lg:text-sm">
                         +
                       </div>
-                      <p className="text-base leading-relaxed text-gray-800 lg:text-xl">{String(question.Content || '')}</p>
+                      <p className="text-base leading-relaxed text-gray-800 lg:text-xl">{question.Content}</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div>
-                <p className="text-lg leading-relaxed text-gray-800 lg:text-2xl">{String(currentQuestion.Content || '')}</p>
+                <p className="text-lg leading-relaxed text-gray-800 lg:text-2xl">{currentQuestion.Content}</p>
 
-                {audioUrl && !audioError && (
+                {audioUrl && (
                   <div className="mt-4 rounded-lg bg-green-50 p-3 lg:mt-6 lg:p-4">
-                    <audio
-                      controls
-                      className="w-full"
-                      onError={() => {
-                        console.error('Audio failed to load:', audioUrl)
-                        setAudioError(true)
-                      }}
-                    >
-                      <source src={audioUrl} type="audio/mpeg" />
+                    <audio controls className="w-full">
+                      <source src={audioUrl} type="audio/webm" />
                       Your browser does not support the audio element.
                     </audio>
-                  </div>
-                )}
-                {audioUrl && audioError && (
-                  <div className="mt-4 rounded-lg bg-red-50 p-3 lg:mt-6 lg:p-4">
-                    <p className="text-sm text-red-600">
-                      ⚠️ Audio playback failed. The recording may not be available.
-                    </p>
                   </div>
                 )}
               </div>

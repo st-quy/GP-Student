@@ -227,16 +227,9 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
               setHasUploaded(true)
               if (currentQuestion && result.fileUrl) {
                 addQuestionAnswer(currentQuestion.ID, result.fileUrl)
-              } else if (currentQuestion) {
-                // Upload succeeded but no fileUrl — still record the question
-                addQuestionAnswer(currentQuestion.ID, null)
               }
             } catch (error) {
               console.error('Failed to upload recording:', error)
-              // Still add the question with null audio so submit payload is not empty
-              if (currentQuestion) {
-                addQuestionAnswer(currentQuestion.ID, null)
-              }
             } finally {
               setIsUploading(false)
             }

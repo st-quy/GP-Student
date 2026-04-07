@@ -77,32 +77,12 @@ const formatAnswerText = data => {
     }
   }
   if (Array.isArray(parsedData)) {
-    return (
-      <div className="flex flex-col gap-2">
-        {parsedData.map((item, idx) => {
-          if (typeof item === 'string')
-            return (
-              <div key={idx} className="rounded border border-gray-200 bg-white p-2">
-                {item}
-              </div>
-            )
-
-          const label = item.key || item.left || item.questionId
-
-          const value = item.value || item.right || item.answerText
-
-          return (
-            <div key={idx} className="flex flex-wrap items-center rounded border border-gray-200 bg-white p-2 text-sm">
-              {label && <span className="mr-2 font-semibold text-gray-600">{typeof label === 'string' ? label : JSON.stringify(label)}</span>}
-
-              {label && value && <span className="mx-1 text-gray-400">➔</span>}
-
-              {value && <span className="ml-2 font-bold text-[#003087]">{typeof value === 'string' ? value : JSON.stringify(value)}</span>}
-            </div>
-          )
-        })}
-      </div>
-    )
+    if (parsedData.length === 1 && typeof parsedData[0] === 'string') return parsedData[0]
+    return parsedData.map(item => {
+      if (typeof item === 'string') return item
+      const val = item.value || item.right || item.answerText || item.text
+      return val ? String(val) : String(item)
+    }).join(', ')
   }
   if (typeof parsedData === 'object' && parsedData !== null) {
     return Object.values(parsedData).join(', ')
@@ -135,10 +115,6 @@ const sortQuestionsForReview = questions =>
 // --- SUB-COMPONENTS ---
 
 const QuestionList = ({ questions }) => {
-  if (!questions || !Array.isArray(questions) || questions.length === 0) {
-    return <p className="text-gray-500">No questions available.</p>
-  }
-
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -156,7 +132,7 @@ const QuestionList = ({ questions }) => {
               {idx + 1}
             </div>
             <div className="pt-0.5 text-lg font-medium text-gray-800">
-              {String(q.questionContent || q.Content || q.content || 'No content')}
+              {q.questionContent || q.Content || q.content || 'No content'}
             </div>
           </div>
         ))}
@@ -624,31 +600,10 @@ const ResultPage = () => {
     return (
       <div className="mb-4 rounded-lg bg-[#F5F8FF] p-5">
         {question.resources?.audio && renderAudioPlayer(question.resources.audio)}
-        {instructionText && (
-          <div className="mb-3 text-lg font-bold text-gray-900">
-            {instructionText.split('\n').map((line, i) => (
-              <div key={i}>{line}</div>
-            ))}
-          </div>
-        )}
-        {question.partSubContent && (
-          <div className="mb-2 text-sm font-bold uppercase tracking-wide text-gray-500">{String(question.partSubContent)}</div>
-        )}
-        {!isInlineGapFill && !isMatchingHeadings && (
-          <div className="mb-2 whitespace-pre-wrap text-lg font-medium leading-relaxed text-gray-800">
-            {String(question.questionContent || question.Content || '')}
-          </div>
-        )}
-        {isGroupQuestion && <GroupAnswerComparison question={question} />}
-        {question.resources?.images?.length > 0 && (
-          <div className="mt-4">
-            <img
-              src={question.resources.images[0]}
-              alt="Question"
-              className="max-h-[300px] rounded-lg border border-gray-200 shadow-sm"
-            />
-          </div>
-        )}
+        <div className="mb-3 text-lg font-bold text-gray-900">{formatPartContent(question.partContent)}</div>
+        {question.partSubContent && <div className="mb-2 text-sm font-bold uppercase text-gray-500">{question.partSubContent}</div>}
+        <div className="mb-2 whitespace-pre-wrap text-lg font-medium leading-relaxed text-gray-800">{question.questionContent || question.Content}</div>
+        {question.resources?.images?.length > 0 && <img src={question.resources.images[0]} alt="Q" className="mt-4 max-h-[300px] rounded-lg border border-gray-200" />}
       </div>
     )
   }
