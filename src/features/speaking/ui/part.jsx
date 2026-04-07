@@ -72,7 +72,7 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
   })
 
   useEffect(() => {
-    setShowIntro(true)
+    setShowIntro(true);
     setIsActive(false)
     setIsTimerRunning(false)
     setPhase('reading')
@@ -87,7 +87,12 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
     if (mediaRecorderRef?.state === 'recording') {
       mediaRecorderRef.stop()
     }
-    initializeSpeakingAnswer()
+
+    // Only initialize if not already present or if topic changed
+    const existingAnswer = localStorage.getItem('speaking_answer')
+    if (!existingAnswer || JSON.parse(existingAnswer).topicId !== data.TopicID) {
+      initializeSpeakingAnswer()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.Content, data.TopicID])
 

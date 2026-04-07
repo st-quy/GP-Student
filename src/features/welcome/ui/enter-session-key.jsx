@@ -44,9 +44,20 @@ const EnterSessionKey = () => {
         { sessionKey, userId },
         {
           onSuccess: async res => {
-            const { ID: requestId, SessionID: sessionId, UserID: userIdFromRes } = res.data.data
+            const data = res.data?.data
+            if (!data || !data.ID || !data.SessionID || !data.UserID) {
+              console.error('Invalid response structure from joinSession:', res.data)
+              message.error('Failed to join session: Invalid server response')
+              return
+            }
+
+            const { ID: requestId, SessionID: sessionId, UserID: userIdFromRes } = data
             message.success('Your request has been submitted successfully!')
             navigate(`/waiting-for-approval/${userIdFromRes}/${sessionId}/${requestId}`)
+          },
+          onError: err => {
+            console.error('Join session error:', err)
+            message.error(err.response?.data?.message || 'Failed to join session')
           }
         }
       )

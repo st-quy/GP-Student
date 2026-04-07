@@ -90,11 +90,25 @@ const addQuestionAnswer = (questionId, answerAudio) => {
 const submitSpeakingAnswer = async () => {
   const speakingAnswerStr = localStorage.getItem('speaking_answer')
   if (!speakingAnswerStr) {
+    console.warn('No speaking answer found in localStorage')
     return
   }
 
   try {
     const speakingAnswer = JSON.parse(speakingAnswerStr)
+
+    // Validation: Ensure questions array is not empty
+    if (!speakingAnswer.questions || speakingAnswer.questions.length === 0) {
+      console.error('Cannot submit: speakingAnswer.questions is empty', speakingAnswer)
+      throw new Error('Questions are required and must be a non-empty array')
+    }
+
+    console.info('Submitting speaking answer:', {
+      sessionId: speakingAnswer.sessionId,
+      skillName: speakingAnswer.skillName,
+      questionCount: speakingAnswer.questions.length
+    })
+
     const response = await axiosInstance.post(`/student-answers`, speakingAnswer)
     localStorage.removeItem('speaking_answer')
     return response.data
