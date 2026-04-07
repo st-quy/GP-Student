@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react'
 const { Text, Paragraph } = Typography
 const { Option } = Select
 
+const getAnswerValue = (answers, questionId) => answers[questionId] ?? answers[`answer-${questionId}`]
+
 // Custom matching question component for questions 26 and 29 with equals sign format
 const CustomMatchingQuestionEquals = ({ leftItems, rightItems, userAnswer = [], setUserAnswer }) => {
   const [selectedOptions, setSelectedOptions] = useState({})
@@ -202,7 +204,7 @@ const QuestionForm = ({ currentPart, answers, setUserAnswer, onSubmit, questionN
   }
 
   const storedAnswers = JSON.parse(localStorage.getItem('grammarAnswers') || '{}')
-  const userAnswer = storedAnswers[`answer-${currentPart?.ID}`]
+  const userAnswer = getAnswerValue(storedAnswers, currentPart?.ID) || []
 
   useEffect(() => {
     localStorage.setItem('grammarAnswers', JSON.stringify(answers))
@@ -229,7 +231,8 @@ const QuestionForm = ({ currentPart, answers, setUserAnswer, onSubmit, questionN
       {currentPart.Type === 'multiple-choice' && <div className="mb-6">{formatDialogueContent(questionContent)}</div>}
       <Form.Item
         key={`answer-container-${currentPart.ID}`}
-        initialValue={answers[`answer-${currentPart.ID}`] || ''}
+        name={`answer-${currentPart.ID}`}
+        initialValue={getAnswerValue(answers, currentPart.ID) || ''}
       >
         {currentPart.Type === 'multiple-choice' ? (
           <MultipleChoice
