@@ -59,9 +59,18 @@ const MicrophoneCheck = () => {
   }, [isPlaying])
 
   const handleStart = useCallback(async () => {
-    await enableFullScreen()
-    navigate('/speaking/test/1')
-  }, [enableFullScreen])
+    try {
+      // Proactively ensure permission is granted before entering fullscreen
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      stream.getTracks().forEach(track => track.stop()) // Stop immediately
+
+      await enableFullScreen()
+      navigate('/speaking/test/1')
+    } catch (err) {
+      console.error('Permission denied before test start:', err)
+      message.error('Microphone permission is required to start the test.')
+    }
+  }, [enableFullScreen, navigate])
 
   const renderContent = useCallback(() => {
     if (showStartScreen) {

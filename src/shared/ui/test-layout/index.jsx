@@ -45,7 +45,7 @@ const TestLayout = ({ children }) => {
       window.dispatchEvent(submitEvent)
 
       if (path.includes('/speaking')) {
-        localStorage.setItem('current_skill', 'listinening')
+        localStorage.setItem('current_skill', 'listening')
         navigate('/listening')
       } else if (path.includes('/listening')) {
         localStorage.setItem('current_skill', 'grammar')

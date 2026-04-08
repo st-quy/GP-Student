@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react'
 const { Text, Paragraph } = Typography
 const { Option } = Select
 
+const getAnswerValue = (answers, questionId) => answers[questionId] ?? answers[`answer-${questionId}`]
+
 // Custom matching question component for questions 26 and 29 with equals sign format
 const CustomMatchingQuestionEquals = ({ leftItems, rightItems, userAnswer = [], setUserAnswer }) => {
   const [selectedOptions, setSelectedOptions] = useState({})
@@ -196,13 +198,13 @@ const QuestionForm = ({ currentPart, answers, setUserAnswer, onSubmit, questionN
     if (!currentPart) {
       return
     }
-    const newAnswers = { ...answers, [currentPart.ID]: answer }
+    const newAnswers = { ...answers, [`answer-${currentPart.ID}`]: answer }
     setUserAnswer(newAnswers)
     localStorage.setItem('grammarAnswers', JSON.stringify(newAnswers))
   }
 
   const storedAnswers = JSON.parse(localStorage.getItem('grammarAnswers') || '{}')
-  const userAnswer = storedAnswers[currentPart?.ID] || []
+  const userAnswer = getAnswerValue(storedAnswers, currentPart?.ID) || []
 
   useEffect(() => {
     localStorage.setItem('grammarAnswers', JSON.stringify(answers))
@@ -228,9 +230,9 @@ const QuestionForm = ({ currentPart, answers, setUserAnswer, onSubmit, questionN
       )}
       {currentPart.Type === 'multiple-choice' && <div className="mb-6">{formatDialogueContent(questionContent)}</div>}
       <Form.Item
-        key={`answer-${currentPart.ID}`}
+        key={`answer-container-${currentPart.ID}`}
         name={`answer-${currentPart.ID}`}
-        initialValue={answers[`answer-${currentPart.ID}`] || ''}
+        initialValue={getAnswerValue(answers, currentPart.ID) || ''}
       >
         {currentPart.Type === 'multiple-choice' ? (
           <MultipleChoice
@@ -255,21 +257,21 @@ const QuestionForm = ({ currentPart, answers, setUserAnswer, onSubmit, questionN
             <CustomMatchingQuestionEquals
               leftItems={currentPart.AnswerContent.leftItems}
               rightItems={currentPart.AnswerContent.rightItems}
-              userAnswer={userAnswer}
+              userAnswer={userAnswer || []}
               setUserAnswer={handleAnswerSubmit}
             />
           ) : isQuestion30 ? (
             <CustomMatchingQuestionPlus
               leftItems={currentPart.AnswerContent.leftItems}
               rightItems={currentPart.AnswerContent.rightItems}
-              userAnswer={userAnswer}
+              userAnswer={userAnswer || []}
               setUserAnswer={handleAnswerSubmit}
             />
           ) : (
             <MatchingQuestion
               leftItems={currentPart.AnswerContent.leftItems}
               rightItems={currentPart.AnswerContent.rightItems}
-              userAnswer={userAnswer}
+              userAnswer={userAnswer || []}
               setUserAnswer={handleAnswerSubmit}
             />
           )

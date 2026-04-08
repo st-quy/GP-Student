@@ -85,19 +85,32 @@ const StudentHistory = ({ userId }) => {
       align: 'center',
       width: 180,
       render: (text, record) => (
-        <Link
-          to={`/result/${record.id}`}
-          style={{
-            color: '#1890ff',
-            fontWeight: 600,
-            textDecoration: 'underline',
-            cursor: 'pointer',
-            display: 'block', // Giúp vùng bấm rộng hơn
-            width: '100%'
-          }}
-        >
-          {text}
-        </Link>
+        <div className="flex flex-col gap-1">
+          <Link
+            to={`/result/${record.id}`}
+            style={{
+              color: '#1890ff',
+              fontWeight: 600,
+              textDecoration: 'underline',
+              cursor: 'pointer',
+              display: 'block',
+              width: '100%'
+            }}
+          >
+            {text}
+          </Link>
+          <Link
+            to={`/review/${record.id}`}
+            style={{
+              color: '#52c41a',
+              fontSize: '12px',
+              fontWeight: 500,
+              textDecoration: 'underline'
+            }}
+          >
+            Detailed Review
+          </Link>
+        </div>
       )
     },
     {

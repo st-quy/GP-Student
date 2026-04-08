@@ -5,6 +5,8 @@ import TimeRemaining from '@shared/ui/time-remaining/index'
 import { Button } from 'antd'
 import { useState } from 'react'
 
+const getAnswerValue = (answers, questionId) => answers[questionId] ?? answers[`answer-${questionId}`]
+
 const QuestionNavigatorContainer = ({
   data,
   answers,
@@ -32,13 +34,14 @@ const QuestionNavigatorContainer = ({
           <QuestionNavigator
             values={data?.Parts.map(question => {
               const isFlagged = flaggedQuestions[`answer-${question.ID}`] || false
+              const answer = getAnswerValue(answers, question.ID)
               let isAnswered = false
 
               if (question.Type === 'matching') {
-                const answerArray = answers[question.ID]
-                isAnswered = Array.isArray(answerArray) && answerArray.length === 5
+                const expectedLength = question.AnswerContent?.leftItems?.length || 0
+                isAnswered = Array.isArray(answer) && expectedLength > 0 && answer.length === expectedLength
               } else {
-                isAnswered = Object.keys(answers).some(key => key.startsWith(question.ID) && answers[key] !== '')
+                isAnswered = typeof answer === 'string' ? answer.trim() !== '' : answer !== undefined && answer !== null && answer !== ''
               }
 
               let type = 'unanswered'

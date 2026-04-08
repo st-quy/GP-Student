@@ -79,22 +79,47 @@ const addQuestionAnswer = (questionId, answerAudio) => {
     return
   }
   const speakingAnswer = JSON.parse(speakingAnswerStr)
-  speakingAnswer.questions.push({
-    questionId: questionId,
-    answerText: null,
-    answerAudio: answerAudio
-  })
+
+  // Check if question already has an answer
+  const existingIndex = speakingAnswer.questions.findIndex(q => q.questionId === questionId)
+
+  if (existingIndex !== -1) {
+    console.info(`Updating existing answer for question ${questionId}`)
+    speakingAnswer.questions[existingIndex].answerAudio = answerAudio
+  } else {
+    console.info(`Adding new answer for question ${questionId}`)
+    speakingAnswer.questions.push({
+      questionId: questionId,
+      answerText: null,
+      answerAudio: answerAudio
+    })
+  }
+
   localStorage.setItem('speaking_answer', JSON.stringify(speakingAnswer))
 }
 
 const submitSpeakingAnswer = async () => {
   const speakingAnswerStr = localStorage.getItem('speaking_answer')
   if (!speakingAnswerStr) {
+    console.warn('No speaking answer found in localStorage')
     return
   }
 
   try {
     const speakingAnswer = JSON.parse(speakingAnswerStr)
+
+    // Validation: Ensure questions array is not empty
+    if (!speakingAnswer.questions || speakingAnswer.questions.length === 0) {
+      console.error('Cannot submit: speakingAnswer.questions is empty', speakingAnswer)
+      throw new Error('Questions are required and must be a non-empty array')
+    }
+
+    console.info('Submitting speaking answer:', {
+      sessionId: speakingAnswer.sessionId,
+      skillName: speakingAnswer.skillName,
+      questionCount: speakingAnswer.questions.length
+    })
+
     const response = await axiosInstance.post(`/student-answers`, speakingAnswer)
     localStorage.removeItem('speaking_answer')
     return response.data
@@ -108,25 +133,21 @@ const submitSpeakingAnswer = async () => {
 const uploadToMinIO = async blob => {
   try {
     const fileName = `recording_${Date.now()}.mp3`
-    const file = new File([blob], fileName, { type: 'audio/mpeg' })
-    // Call BE to get presigned URL
-    const res = await axiosInstance.get(`/presigned-url?filename=${file.name}`)
+    const formData = new FormData()
+    formData.append('file', blob, fileName)
+    formData.append('folder', 'audio')
 
-    const { uploadUrl, fileUrl } = await res.data
-
-    // Upload to MinIO
-    await fetch(uploadUrl, {
-      method: 'PUT',
-      body: file,
+    // [STABILITY BRIDGE]: Use API Proxy to bypass local CORS/SSL issues with direct MinIO uploads
+    const response = await axiosInstance.post('/presigned-url/upload', formData, {
       headers: {
-        'Content-Type': file.type
+        'Content-Type': 'multipart/form-data'
       }
     })
 
-    console.warn('✅ Uploaded to MinIO successfully:', fileUrl)
-    return { fileUrl }
+    console.warn('✅ Uploaded via Proxy successfully:', response.data.fileUrl)
+    return { fileUrl: response.data.fileUrl }
   } catch (error) {
-    console.error('Upload error:', error)
+    console.error('Upload via Proxy error:', error)
     throw error
   }
 }
