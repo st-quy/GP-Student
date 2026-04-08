@@ -1,11 +1,17 @@
-import { CameraOutlined, LeftOutlined } from '@ant-design/icons'
-import { useChangeUserPassword, useUpdateUserProfile, useUserProfile } from '@features/profile/hooks/useProfile'
+import { LeftOutlined, UploadOutlined } from '@ant-design/icons'
+import defaultAvatar from '@assets/images/avatar.png'
+import { getAvatarUploadUrl, uploadAvatarToMinIO } from '@features/profile/api'
+import {
+  useChangeUserPassword,
+  useUpdateUserProfile,
+  useUpdateUserAvatar,
+  useUserProfile
+} from '@features/profile/hooks/useProfile'
 import ChangePasswordModal from '@features/profile/ui/change-password-profile'
 import EditProfileModal from '@features/profile/ui/edit-profile'
 import { EMAIL_REG, PHONE_REG } from '@shared/lib/constants/reg'
 import SharedHeader from '@shared/ui/base-header'
-import defaultAvatar from '@assets/images/avatar.png'
-import { Avatar, Button, Card, message, Spin } from 'antd'
+import { Button, Card, message, Spin } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
@@ -31,8 +37,10 @@ const Profile = () => {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   const updateProfileMutation = useUpdateUserProfile()
   const changePasswordMutation = useChangeUserPassword()
+  const updateAvatarMutation = useUpdateUserAvatar()
   const fileInputRef = useRef(null)
   const [avatar, setAvatar] = useState(defaultAvatar)
+  const [isUploading, setIsUploading] = useState(false)
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -50,6 +58,12 @@ const Profile = () => {
         phone: userData.phone || '',
         address: userData.address || ''
       })
+      // Set avatar from user data if available
+      if (userData.avatarUrl) {
+        setAvatar(userData.avatarUrl)
+      } else {
+        setAvatar(defaultAvatar)
+      }
     }
   }, [userData])
 
@@ -122,12 +136,16 @@ const Profile = () => {
   }
 
   const handleAvatarClick = () => {
+    if (isUploading) {
+      return
+    }
     fileInputRef.current?.click()
   }
 
-  const handleFileChange = event => {
+  const handleFileChange = async event => {
     const file = event.target.files?.[0]
     if (file) {
+      // Validate file
       if (file.size > 2 * 1024 * 1024) {
         message.error('Image size should be less than 2MB')
         return
@@ -136,11 +154,43 @@ const Profile = () => {
         message.error('Please upload an image file')
         return
       }
-      const reader = new FileReader()
-      reader.onload = e => {
-        setAvatar(e.target?.result)
+
+      try {
+        setIsUploading(true)
+
+        // Show preview immediately
+        const reader = new FileReader()
+        reader.onload = e => {
+          setAvatar(e.target?.result)
+        }
+        reader.readAsDataURL(file)
+
+        // Get upload URL from backend
+        const fileName = `avatar_${Date.now()}_${file.name}`
+        const uploadData = await getAvatarUploadUrl(fileName)
+
+        // Upload file to MinIO
+        await uploadAvatarToMinIO(uploadData.uploadUrl, file)
+
+        // Update user profile with new avatar URL
+        await updateAvatarMutation.mutateAsync({
+          userId: auth.user?.userId,
+          avatarUrl: uploadData.fileUrl
+        })
+
+        message.success('Avatar updated successfully!')
+      } catch (error) {
+        console.error('Avatar upload failed:', error)
+        message.error('Failed to upload avatar. Please try again.')
+        // Reset to previous avatar on error
+        if (userData?.avatarUrl) {
+          setAvatar(userData.avatarUrl)
+        } else {
+          setAvatar(defaultAvatar)
+        }
+      } finally {
+        setIsUploading(false)
       }
-      reader.readAsDataURL(file)
     }
   }
 
@@ -155,13 +205,19 @@ const Profile = () => {
           <div className="flex flex-col gap-6 md:flex-row md:items-center">
             <div className="group relative cursor-pointer" onClick={handleAvatarClick}>
               <div className="relative h-24 w-24">
-                <img
-                  src={avatar}
-                  alt="Profile"
-                  className="h-full w-full rounded-lg border border-gray-100 bg-blue-100 object-cover"
-                />
+                {isUploading ? (
+                  <div className="flex h-24 w-24 items-center justify-center rounded-lg border border-gray-100 bg-blue-100">
+                    <Spin size="small" />
+                  </div>
+                ) : (
+                  <img
+                    src={avatar}
+                    alt="Profile"
+                    className="h-full w-full rounded-lg border border-gray-100 bg-blue-100 object-cover"
+                  />
+                )}
                 <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black bg-opacity-50 opacity-0 transition-opacity group-hover:opacity-100">
-                  <CameraOutlined className="text-xl text-white" />
+                  <UploadOutlined className="text-xl text-white" />
                 </div>
               </div>
               <input
@@ -170,6 +226,7 @@ const Profile = () => {
                 className="hidden"
                 accept="image/*"
                 onChange={handleFileChange}
+                disabled={isUploading}
               />
             </div>
             <div className="flex-grow">

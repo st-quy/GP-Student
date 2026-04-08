@@ -1,5 +1,11 @@
 import { updateUser } from '@app/providers/reducer/auth/authSlice'
-import { changeUserPassword, fetchStudentHistory, fetchUserProfile, updateUserProfile } from '@features/profile/api'
+import {
+  changeUserPassword,
+  fetchStudentHistory,
+  fetchUserProfile,
+  updateUserProfile,
+  updateUserAvatar
+} from '@features/profile/api'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useDispatch } from 'react-redux'
 
@@ -22,6 +28,21 @@ export const useUpdateUserProfile = () => {
     },
     onError: error => {
       console.error('Update profile failed:', error)
+    }
+  })
+}
+
+export const useUpdateUserAvatar = () => {
+  const dispatch = useDispatch()
+
+  return useMutation({
+    mutationFn: updateUserAvatar,
+    onSuccess: response => {
+      const updatedUser = response.data
+      dispatch(updateUser(updatedUser))
+    },
+    onError: error => {
+      console.error('Update avatar failed:', error)
     }
   })
 }
