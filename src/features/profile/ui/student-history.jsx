@@ -143,7 +143,12 @@ const StudentHistory = ({ userId }) => {
       key: 'speaking',
       align: 'center',
       width: 150,
-      render: (_, record) => record.isPublished ? renderScore(record.speakingScore, record.speakingLevel) : <span style={{ color: '#999' }}>-</span>
+      render: (_, record) =>
+        record.isPublished ? (
+          renderScore(record.speakingScore, record.speakingLevel)
+        ) : (
+          <span style={{ color: '#999' }}>-</span>
+        )
     },
     {
       title: 'Writing',
@@ -151,7 +156,12 @@ const StudentHistory = ({ userId }) => {
       key: 'writing',
       align: 'center',
       width: 150,
-      render: (_, record) => record.isPublished ? renderScore(record.writingScore, record.writingLevel) : <span style={{ color: '#999' }}>-</span>
+      render: (_, record) =>
+        record.isPublished ? (
+          renderScore(record.writingScore, record.writingLevel)
+        ) : (
+          <span style={{ color: '#999' }}>-</span>
+        )
     },
     {
       title: 'Total',
@@ -160,7 +170,11 @@ const StudentHistory = ({ userId }) => {
       align: 'center',
       width: 100,
       render: (_, record) =>
-        record.isPublished ? <span style={{ fontSize: '16px', color: '#000' }}>{record.total ?? '-'}</span> : <span style={{ color: '#999' }}>-</span>
+        record.isPublished ? (
+          <span style={{ fontSize: '16px', color: '#000' }}>{record.total ?? '-'}</span>
+        ) : (
+          <span style={{ color: '#999' }}>-</span>
+        )
     },
     {
       title: 'Final Level',
@@ -215,11 +229,11 @@ const StudentHistory = ({ userId }) => {
         }}
       >
         <Input
-          maxLength={255}
+          maxLength={100}
           placeholder="Search session name"
           prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
           value={searchText}
-          onChange={e => setSearchText(e.target.value)}
+          onChange={e => setSearchText(e.target.value.slice(0, 100))}
           style={{ minWidth: 200, flex: 1 }}
         />
         <Select style={{ minWidth: 120 }} placeholder="Date" allowClear value={selectedDate} onChange={setSelectedDate}>
