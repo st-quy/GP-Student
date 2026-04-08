@@ -6,6 +6,7 @@ import PlayStopButton from '@features/listening/ui/play-stop-button'
 import TestNavigation from '@features/listening/ui/test-navigation'
 import useGlobalData from '@shared/hooks/useGlobalData'
 import DropdownQuestion from '@shared/ui/question-type/dropdown-question'
+import MatchingQuestion from '@shared/ui/question-type/matching-question'
 import MultipleChoice from '@shared/ui/question-type/multiple-choice'
 import NextScreen from '@shared/ui/submission/next-screen'
 import { useQuery } from '@tanstack/react-query'
@@ -34,41 +35,9 @@ const ListeningTest = () => {
   const [isSubmitted, setIsSubmitted] = useState(() => localStorage.getItem('listening_test_submitted') === 'true')
   const { getGlobalData, errorMessage, setErrorMessage, showErrorModal, setShowErrorModal } = useGlobalData()
 
-  const [formattedAnswers, setFormattedAnswers] = useState(() => {
-    const savedFormattedAnswers = localStorage.getItem('listening_formatted_answers')
-    const globalData = getGlobalData()
-
-    if (!globalData) {
-      return {
-        studentId: '',
-        topicId: '',
-        skillName: 'LISTENING',
-        sessionId: '',
-        sessionParticipantId: '',
-        questions: []
-      }
-    }
-
-    return savedFormattedAnswers
-      ? JSON.parse(savedFormattedAnswers)
-      : {
-          studentId: globalData.studentId,
-          topicId: globalData.topicId,
-          skillName: 'LISTENING',
-          sessionId: globalData.sessionId,
-          sessionParticipantId: globalData.sessionParticipantId,
-          questions: []
-        }
-  })
-
-  // ALL HOOKS MUST BE AT THE TOP
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(userAnswers))
   }, [userAnswers])
-
-  useEffect(() => {
-    localStorage.setItem('listening_formatted_answers', JSON.stringify(formattedAnswers))
-  }, [formattedAnswers])
 
   const {
     data: testData,
@@ -79,13 +48,11 @@ const ListeningTest = () => {
     queryFn: () => fetchListeningTestDetails()
   })
 
-  // Restore formatQuestionData
   const formatQuestionData = useCallback((question) => {
     if (!question) return null
     try {
-      // FIX: Handle both string and object AnswerContent
-      const answerContent = typeof question.AnswerContent === 'string' 
-        ? JSON.parse(question.AnswerContent) 
+      const answerContent = typeof question.AnswerContent === 'string'
+        ? JSON.parse(question.AnswerContent)
         : question.AnswerContent
 
       if (question.Type === 'listening-questions-group' && answerContent?.groupContent?.listContent?.length > 0) {
@@ -132,84 +99,62 @@ const ListeningTest = () => {
     }
   }, [])
 
-  useEffect(() => {
-    if (testData?.Sections?.[0]?.Parts) {
-      const globalData = getGlobalData()
-      if (!globalData) return
-
-      const existingFormattedAnswers = localStorage.getItem('listening_formatted_answers')
-      let currentFormatted = existingFormattedAnswers
-        ? JSON.parse(existingFormattedAnswers)
-        : {
-            studentId: globalData.studentId,
-            topicId: globalData.topicId,
-            skillName: 'LISTENING',
-            sessionId: globalData.sessionId,
-            sessionParticipantId: globalData.sessionParticipantId,
-            questions: []
-          }
-
-      const existingQuestionIds = new Set(currentFormatted.questions.map(q => q.questionId))
-      const newQuestions = []
-
-      testData.Sections[0].Parts.forEach(part => {
-        part.Questions.forEach(question => {
-          if (!existingQuestionIds.has(question.ID)) {
-            newQuestions.push({
-              questionId: question.ID,
-              answerAudio: null,
-              answerText: question.Type === 'listening-questions-group' ? [] : null
-            })
-            existingQuestionIds.add(question.ID)
-          }
-        })
-      })
-
-      if (newQuestions.length > 0) {
-        const updated = {
-          ...currentFormatted,
-          questions: [...currentFormatted.questions, ...newQuestions]
-        }
-        localStorage.setItem('listening_formatted_answers', JSON.stringify(updated))
-        setFormattedAnswers(updated)
-      }
+  const buildSubmissionPayload = useCallback(() => {
+    const globalData = getGlobalData()
+    if (!globalData || !testData?.Sections?.[0]?.Parts) {
+      throw new Error('Missing required data for submission')
     }
-  }, [testData?.ID, getGlobalData])
 
-  useEffect(() => {
-    if (!testData?.Sections?.[0]?.Parts) return
+    const questions = []
 
-    const listeningGroupQuestions = []
+    console.log('=== SUBMISSION DEBUG ===')
+    console.log('Full userAnswers:', JSON.stringify(userAnswers, null, 2))
+
     testData.Sections[0].Parts.forEach(part => {
       part.Questions.forEach(question => {
-        if (question.Type === 'listening-questions-group' && question.AnswerContent?.groupContent?.listContent) {
-          const parentId = question.ID
-          const subQuestions = question.AnswerContent.groupContent.listContent
-          const allAnswered = subQuestions.every(sub => userAnswers[`${parentId}-${sub.ID}`] !== undefined)
+        const ua = userAnswers[question.ID]
 
-          if (allAnswered) {
-            listeningGroupQuestions.push({
-              parentId,
-              answers: subQuestions.map(sub => ({ ID: sub.ID, answer: userAnswers[`${parentId}-${sub.ID}`] }))
-            })
-          }
+        let answerText
+        let answerAudio = null
+
+        if (question.Type === 'listening-questions-group') {
+          const subQs = question.AnswerContent?.groupContent?.listContent || []
+          answerText = subQs
+            .map(sub => ({
+              ID: sub.ID,
+              answer: userAnswers[`${question.ID}-${sub.ID}`]
+            }))
+            .filter(a => a.answer !== undefined)
+          answerAudio = ua?.answerAudio ?? null
+        } else if (ua && typeof ua === 'object' && 'answerText' in ua) {
+          answerText = ua.answerText
+          answerAudio = ua.answerAudio ?? null
+        } else {
+          answerText = ua ?? null
         }
+
+        console.log(`Q[${question.Sequence}] ID=${question.ID} Type=${question.Type} | ua=${JSON.stringify(ua)} | answerText=${JSON.stringify(answerText)}`)
+
+        questions.push({
+          questionId: question.ID,
+          answerText,
+          answerAudio
+        })
       })
     })
 
-    if (listeningGroupQuestions.length > 0) {
-      setFormattedAnswers(prev => {
-        const newQuestions = [...prev.questions]
-        listeningGroupQuestions.forEach(group => {
-          const idx = newQuestions.findIndex(q => q.questionId === group.parentId)
-          if (idx >= 0) {
-            newQuestions[idx].answerText = group.answers
-          }
-        })
-        return { ...prev, questions: newQuestions }
-      })
+    console.log('Final payload questions:', JSON.stringify(questions, null, 2))
+    console.log('=== END SUBMISSION DEBUG ===')
+
+    return {
+      studentId: globalData.studentId,
+      topicId: globalData.topicId,
+      skillName: 'LISTENING',
+      sessionId: globalData.sessionId,
+      sessionParticipantId: globalData.sessionParticipantId,
+      questions
     }
-  }, [userAnswers, testData])
+  }, [userAnswers, testData, getGlobalData])
 
   const navigatorQuestions = useMemo(() => {
     if (!testData?.Sections?.[0]?.Parts) return []
@@ -292,37 +237,27 @@ const ListeningTest = () => {
   }
 
   const handleAnswerSubmit = (questionId, answer) => {
-    setUserAnswers(prev => {
-      const newAnswers = { ...prev, [questionId]: answer }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newAnswers))
-      return newAnswers
-    })
-    
-    // Update formatted answers for single questions
-    if (!questionId.includes('-')) {
-      setFormattedAnswers(prev => {
-        const newQs = [...prev.questions]
-        const idx = newQs.findIndex(q => q.questionId === questionId)
-        if (idx >= 0) newQs[idx].answerText = answer
-        return { ...prev, questions: newQs }
-      })
-    }
+    setUserAnswers(prev => ({
+      ...prev,
+      [questionId]: answer
+    }))
   }
 
   const handleSubmitAnswers = useCallback(async (isAutoSubmit = false) => {
     try {
-      const globalData = getGlobalData()
-      if (!globalData) throw new Error('Missing required data')
-      const payload = { ...formattedAnswers, ...globalData }
+      const payload = buildSubmissionPayload()
+      console.log('>>> Submitting payload:', JSON.stringify(payload, null, 2))
       await saveListeningAnswers(payload)
+      console.log('>>> Submission successful')
       setIsSubmitted(true)
       localStorage.setItem('listening_test_submitted', 'true')
       localStorage.setItem('current_skill', 'grammar')
     } catch (error) {
+      console.error('>>> Submission failed:', error)
       setErrorMessage(error.message)
       setShowErrorModal(true)
     }
-  }, [formattedAnswers, getGlobalData, setErrorMessage, setShowErrorModal])
+  }, [buildSubmissionPayload, setErrorMessage, setShowErrorModal])
 
   useEffect(() => {
     window.addEventListener('forceSubmit', handleSubmitAnswers)
@@ -375,7 +310,7 @@ const ListeningTest = () => {
 
         {currentGroup?.questions.map(question => {
           const formattedQ = formatQuestionData(question)
-          
+
           if (Array.isArray(formattedQ)) {
             return (
               <div key={question.ID} className="mt-6">
@@ -414,6 +349,14 @@ const ListeningTest = () => {
                   userAnswer={userAnswers}
                   setUserAnswer={setUserAnswers}
                   onBeforeAnswer={checkAudioPlayed}
+                  className="z-0 mt-6 shadow-none"
+                />
+              ) : formattedQ?.Type === 'matching' ? (
+                <MatchingQuestion
+                  leftItems={formattedQ.AnswerContent?.leftItems || []}
+                  rightItems={formattedQ.AnswerContent?.rightItems || []}
+                  userAnswer={userAnswers[question.ID] || []}
+                  setUserAnswer={answer => handleAnswerSubmit(question.ID, answer)}
                   className="z-0 mt-6 shadow-none"
                 />
               ) : null}

@@ -208,23 +208,29 @@ const SpeakingPartView = ({ partName, questions }) => {
 
 const DropdownListResult = ({ question }) => {
   let userAnswersMap = {}
-  const clean = s => String(s || '').replace(/[+.\\s]/g, '').trim().toLowerCase()
+  const normalizeKey = (k) => {
+    return String(k || '').trim().split('.')[0];
+  }
+  
   try {
     const raw = question.userResponse?.text
     if (raw) {
       let parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
       if (Array.isArray(parsed)) {
         parsed.forEach(item => {
-          const k = clean(item.key || item.left || item.id || item.questionId)
+          const k = normalizeKey(item.key || item.left || item.id || item.questionId)
           if (k) userAnswersMap[k] = item.value || item.right || item.answerText || item.text
         })
       } else if (typeof parsed === 'object') {
         Object.entries(parsed).forEach(([k, v]) => {
-          userAnswersMap[clean(k)] = v
+          userAnswersMap[normalizeKey(k)] = v
         })
       }
     }
-  } catch (e) {}
+  } catch (e) {
+    // Silently ignore parsing errors
+  }
+  
   let correctAnswers = []
   try {
     const rawContent = question.resources?.answerContent || question.AnswerContent
@@ -234,15 +240,18 @@ const DropdownListResult = ({ question }) => {
         ? contentObj.correctAnswer 
         : Object.entries(contentObj.correctAnswer).map(([k, v]) => ({ key: k, value: v }))
     }
-  } catch (e) {}
+  } catch (e) {
+    // Silently ignore parsing errors
+  }
+  
   return (
     <div className="mt-6 flex flex-col gap-4">
       {correctAnswers.map((item, idx) => {
         const keyText = item.key || item.left || String(idx + 1)
-        const keyForMap = clean(keyText)
+        const keyForMap = normalizeKey(keyText)
         const correctVal = item.value || item.right
         const userVal = userAnswersMap[keyForMap]
-        const isCorrect = clean(userVal) === clean(correctVal)
+        const isCorrect = String(userVal || '').trim().toLowerCase() === String(correctVal || '').trim().toLowerCase()
         return (
           <div key={idx} className="border-b border-gray-100 pb-4 last:border-0">
             <div className="mb-2 font-medium text-gray-700">Question {keyText}:</div>
@@ -481,10 +490,95 @@ const ScoreSummaryCharts = ({ skills, participantInfo }) => {
 const checkIsFullyCorrect = (q) => {
   const rawUser = q.userResponse?.text
   if (!rawUser || rawUser === '[]' || rawUser === '' || rawUser === '{}') return false
+  
   try {
+    // If backend already marked as correct, trust it
     if (q.isCorrect) return true
-    return !!q.isCorrect
-  } catch (e) { return !!q.isCorrect }
+    
+    // For speaking and writing, always correct if there's a response
+    const type = (q.type || '').toLowerCase()
+    if (['speaking', 'writing'].includes(type)) return !!rawUser
+    
+    // For other question types, apply all-or-nothing logic matching backend
+    const correctAnswer = q.correctAnswer
+    if (!correctAnswer) return false
+    
+    const normalizeKey = (k) => {
+      return String(k || '').trim().split('.')[0]
+    }
+    
+    const safeParse = (str) => {
+      if (typeof str === 'object' && str !== null) return str
+      try {
+        return JSON.parse(str)
+      } catch {
+        return null
+      }
+    }
+    
+    const userAnsObj = typeof rawUser === 'string' ? safeParse(rawUser) : rawUser
+    
+    // 1) MULTIPLE CHOICE
+    if (type === 'multiple-choice') {
+      const correctVal = typeof correctAnswer === 'string'
+        ? correctAnswer
+        : correctAnswer?.value || correctAnswer?.correctAnswer || ''
+      
+      return String(rawUser).trim().toLowerCase() === String(correctVal).trim().toLowerCase()
+    }
+    
+    // 2) DROPDOWN / MATCHING / ORDERING (All-or-Nothing)
+    if (['dropdown-list', 'matching', 'ordering', 'dropdown-matching', 'full-matching'].includes(type)) {
+      // In the frontend, correctAnswer is already the array of correct items
+      const correctAnswers = Array.isArray(correctAnswer) ? correctAnswer : []
+      if (correctAnswers.length === 0) return false
+      if (!Array.isArray(userAnsObj)) return false
+
+      const studentAnswersMap = {}
+      userAnsObj.forEach(sa => {
+        const key = normalizeKey(sa.left || sa.key || sa.id || sa.questionId)
+        if (key) {
+          studentAnswersMap[key] = sa.right || sa.value || sa.answerText || String(sa)
+        }
+      })
+
+      return correctAnswers.every((correct) => {
+        const correctKey = normalizeKey(correct.left || correct.key || correct.id || correct.questionId)
+        if (correctKey === '0') return true // Skip "done for you" items
+
+        const correctVal = correct.right || correct.value
+        const userVal = studentAnswersMap[correctKey]
+        
+        return String(userVal || '').trim().toLowerCase() === String(correctVal || '').trim().toLowerCase()
+      })
+    }
+    
+    // 3) LISTENING GROUP (All-or-Nothing for the group)
+    if (type === 'listening-questions-group') {
+      // In the frontend, q.correctAnswer might be transformed or raw
+      const correctList = q.resources?.answerContent?.groupContent?.listContent || 
+                          correctAnswer?.groupContent?.listContent || []
+      
+      if (correctList.length === 0) return false
+      if (!Array.isArray(userAnsObj)) return false
+
+      return correctList.every((subQ) => {
+        const userSubAns = userAnsObj.find(
+          (u) => String(u.ID || u.id) === String(subQ.ID)
+        )
+        return (
+          userSubAns &&
+          String(userSubAns.answer || userSubAns.value).trim().toLowerCase() ===
+            String(subQ.correctAnswer).trim().toLowerCase()
+        )
+      })
+    }
+    
+    return false
+  } catch (e) {
+    console.error('Error in checkIsFullyCorrect:', e)
+    return false
+  }
 }
 
 const ResultPage = () => {

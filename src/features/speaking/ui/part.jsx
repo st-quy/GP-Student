@@ -105,7 +105,7 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
             if (phase === 'reading') {
               if (isPart4) {
                 setPhase('preparing')
-                setCountdown(5)
+                setCountdown(60)
               } else {
                 setPhase('answering')
                 setCountdown(parseTime(currentTimePair.answer))
