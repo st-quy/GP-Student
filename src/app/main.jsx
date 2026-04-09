@@ -9,11 +9,11 @@ import store from './providers/store'
 
 const queryClient = new QueryClient()
 
-const hasCurrentSkill = localStorage.getItem('current_skill') !== null
-const isPublicAuthRoute = ['/reset-password', '/login', '/forgot-password', '/register'].includes(window.location.pathname)
+const isAuthenticated = localStorage.getItem('access_token') !== null
+const isPublicAuthRoute = ['/reset-password', '/login', '/forgot-password', '/register', '/'].includes(window.location.pathname)
 
-if (!hasCurrentSkill && window.location.pathname !== '/' && !isPublicAuthRoute) {
-  window.location.href = '/'
+if (!isAuthenticated && !isPublicAuthRoute) {
+  window.location.href = '/login'
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(

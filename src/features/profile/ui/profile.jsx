@@ -1,10 +1,9 @@
 import { LeftOutlined, UploadOutlined } from '@ant-design/icons'
 import defaultAvatar from '@assets/images/avatar.png'
-import { getAvatarUploadUrl, uploadAvatarToMinIO } from '@features/profile/api'
+import { uploadAvatarToMinIO } from '@features/profile/api'
 import {
   useChangeUserPassword,
   useUpdateUserProfile,
-  useUpdateUserAvatar,
   useUserProfile
 } from '@features/profile/hooks/useProfile'
 import ChangePasswordModal from '@features/profile/ui/change-password-profile'
@@ -50,14 +49,14 @@ const Profile = () => {
   const navigate = useNavigate()
   // @ts-ignore
   const auth = useSelector(state => state.auth)
-  const { data: userData, isLoading, isError, refetch } = useUserProfile(auth.user?.userId)
+  const { data: userProfileResponse, isLoading, isError, refetch } = useUserProfile(auth.user?.userId)
+  const userData = userProfileResponse
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   const updateProfileMutation = useUpdateUserProfile()
   const changePasswordMutation = useChangeUserPassword()
-  const updateAvatarMutation = useUpdateUserAvatar()
   const fileInputRef = useRef(null)
-  const [avatar, setAvatar] = useState(defaultAvatar)
+  const [avatar, setAvatar] = useState(auth.user?.avatarUrl || defaultAvatar)
   const [isUploading, setIsUploading] = useState(false)
   const [formData, setFormData] = useState({
     firstName: '',
@@ -76,16 +75,23 @@ const Profile = () => {
         phone: userData.phone || '',
         address: userData.address || ''
       })
-      // Set avatar from user data if available
-      if (userData.avatarUrl) {
-        setAvatar(userData.avatarUrl)
+      const newAvatarUrl = userData.avatarUrl || auth.user?.avatarUrl
+      if (newAvatarUrl) {
+        setAvatar(newAvatarUrl)
       } else {
         setAvatar(defaultAvatar)
       }
     }
-  }, [userData])
+  }, [userData, auth.user?.avatarUrl])
+
+  useEffect(() => {
+    if (auth.user?.avatarUrl && avatar === defaultAvatar) {
+      setAvatar(auth.user.avatarUrl)
+    }
+  }, [auth.user?.avatarUrl])
 
   const handleEdit = () => {
+    if (!userData) return
     setFormData({
       firstName: userData.firstName || '',
       lastName: userData.lastName || '',
@@ -97,6 +103,7 @@ const Profile = () => {
   }
 
   const handleCancelEdit = () => {
+    if (!userData) return
     setFormData({
       firstName: userData.firstName || '',
       lastName: userData.lastName || '',
@@ -181,17 +188,11 @@ const Profile = () => {
         }
         reader.readAsDataURL(file)
 
-        // Get upload URL from backend
-        const fileName = `avatar_${Date.now()}_${file.name}`
-        const uploadData = await getAvatarUploadUrl(fileName)
+        const uploadData = await uploadAvatarToMinIO(file)
 
-        // Upload file to MinIO
-        await uploadAvatarToMinIO(uploadData.uploadUrl, file)
-
-        // Update user profile with new avatar URL
-        await updateAvatarMutation.mutateAsync({
+        await updateProfileMutation.mutateAsync({
           userId: auth.user?.userId,
-          avatarUrl: uploadData.fileUrl
+          userData: { avatarUrl: uploadData.fileUrl }
         })
 
         message.success('Avatar updated successfully!')
@@ -271,15 +272,15 @@ const Profile = () => {
           <div className="grid grid-cols-3 gap-8 md:grid-cols-3">
             <div>
               <p className="mb-1 text-gray-600">Phone number</p>
-              <p className="text-gray-500">{userData.phone}</p>
+              <p className="text-gray-500">{userData?.phone}</p>
             </div>
             <div>
               <p className="mb-1 text-gray-600">Student Code</p>
-              <p className="text-gray-500">{userData.studentCode || 'Not available'}</p>
+              <p className="text-gray-500">{userData?.studentCode || 'Not available'}</p>
             </div>
             <div>
               <p className="mb-1 text-gray-600">Address</p>
-              <p className="text-gray-500">{userData.address || 'Not available'}</p>
+              <p className="text-gray-500">{userData?.address || 'Not available'}</p>
             </div>
           </div>
         </Card>

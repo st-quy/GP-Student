@@ -24,6 +24,12 @@ const SharedHeader = () => {
     </Menu>
   )
 
+  const avatarContent = user?.avatarUrl ? (
+    <img src={user.avatarUrl} alt="Avatar" className="h-full w-full rounded-full object-cover" />
+  ) : (
+    user?.lastName?.charAt(0)
+  )
+
   return (
     <>
       <Header className="flex h-[80px] items-center justify-between border-0 border-l border-solid border-neutral-400 bg-[#003087] px-12">
@@ -37,7 +43,7 @@ const SharedHeader = () => {
               onClick={e => e.preventDefault()}
             >
               <Avatar className="bg-primary-color flex h-10 w-10 items-center justify-center rounded-full border-2 border-white text-lg font-semibold text-white">
-                {user?.lastName?.charAt(0)}
+                {avatarContent}
               </Avatar>
               <span className="flex items-center space-x-1 text-base">
                 <span className="font-medium">{user?.lastName}</span>

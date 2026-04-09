@@ -3,8 +3,7 @@ import {
   changeUserPassword,
   fetchStudentHistory,
   fetchUserProfile,
-  updateUserProfile,
-  updateUserAvatar
+  updateUserProfile
 } from '@features/profile/api'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useDispatch } from 'react-redux'
@@ -23,26 +22,13 @@ export const useUpdateUserProfile = () => {
   return useMutation({
     mutationFn: updateUserProfile,
     onSuccess: response => {
-      const updatedUser = response.data
-      dispatch(updateUser(updatedUser))
+      const updatedUser = response?.data
+      if (updatedUser) {
+        dispatch(updateUser(updatedUser))
+      }
     },
     onError: error => {
       console.error('Update profile failed:', error)
-    }
-  })
-}
-
-export const useUpdateUserAvatar = () => {
-  const dispatch = useDispatch()
-
-  return useMutation({
-    mutationFn: updateUserAvatar,
-    onSuccess: response => {
-      const updatedUser = response.data
-      dispatch(updateUser(updatedUser))
-    },
-    onError: error => {
-      console.error('Update avatar failed:', error)
     }
   })
 }

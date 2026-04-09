@@ -20,36 +20,19 @@ export const updateUserProfile = async ({ userId, userData }) => {
   }
 }
 
-export const updateUserAvatar = async ({ userId, avatarUrl }) => {
+export const uploadAvatarToMinIO = async file => {
   try {
-    const { data } = await axiosInstance.put(`/users/${userId}/avatar`, { avatarUrl })
-    return data
-  } catch (error) {
-    console.error('Error updating user avatar:', error)
-    throw error
-  }
-}
+    const fileName = `avatar_${Date.now()}_${file.name}`
+    const formData = new FormData()
+    formData.append('file', file, fileName)
+    formData.append('folder', 'avatars')
 
-export const getAvatarUploadUrl = async fileName => {
-  try {
-    const { data } = await axiosInstance.post('/presigned-url/upload-url', {
-      fileName,
-      type: 'avatars'
-    })
-    return data
-  } catch (error) {
-    console.error('Error getting avatar upload URL:', error)
-    throw error
-  }
-}
-
-export const uploadAvatarToMinIO = async (uploadUrl, file) => {
-  try {
-    await axiosInstance.put(uploadUrl, file, {
+    const { data } = await axiosInstance.post('/presigned-url/upload', formData, {
       headers: {
-        'Content-Type': file.type
+        'Content-Type': 'multipart/form-data'
       }
     })
+    return data
   } catch (error) {
     console.error('Error uploading avatar to MinIO:', error)
     throw error
