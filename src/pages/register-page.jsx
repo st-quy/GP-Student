@@ -1,4 +1,9 @@
 import { EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons'
+import {
+  getRegisterErrorMessage,
+  isValidVietnamesePhoneNumber,
+  sanitizePhoneNumber
+} from '@features/auth/model'
 import { EMAIL_REG, PASSWORD_RULES } from '@shared/lib/constants/reg'
 import { useRegister } from '@shared/lib/hooks/useAuthUsers'
 import { Form, Input, Button, Typography, Space, Row, Col, message } from 'antd'
@@ -29,10 +34,7 @@ const RegisterPage = () => {
       navigate('/login')
     },
     onError: error => {
-      // Normalize backend wording so the form stays consistent with "Student ID" labels in the UI.
-      const apiError = error.response?.data?.errors
-      const normalizedError = typeof apiError === 'string' ? apiError.replace(/Student Code/gi, 'Student ID') : apiError
-      message.error(normalizedError || 'Sign up failed. Please try again.')
+      message.error(getRegisterErrorMessage(error))
     }
   })
 
@@ -50,19 +52,56 @@ const RegisterPage = () => {
       return
     }
 
+    if (fieldName === 'phone') {
+      return
+    }
+
     form.validateFields([fieldName])
   }
 
+  const validatePhoneNumber = (_, value) => {
+    const sanitizedValue = sanitizePhoneNumber(value)
+
+    if (!sanitizedValue) {
+      return Promise.resolve()
+    }
+
+    if (sanitizedValue.length < 10) {
+      return Promise.reject(new Error('Phone number must be at least 10 digits and start with 0'))
+    }
+
+    if (!isValidVietnamesePhoneNumber(sanitizedValue)) {
+      return Promise.reject(new Error('Invalid phone number format'))
+    }
+
+    return Promise.resolve()
+  }
+
   const onFinish = () => {
+    const currentValues = form.getFieldsValue()
+    const sanitizedPhone = sanitizePhoneNumber(currentValues.phone)
+
+    if (sanitizedPhone && !isValidVietnamesePhoneNumber(sanitizedPhone)) {
+      const phoneError = 'Invalid phone number format'
+      form.setFields([
+        {
+          name: 'phone',
+          errors: [phoneError]
+        }
+      ])
+      message.error(phoneError)
+      return
+    }
+
     // Keep the submit payload aligned with the API contract while using the latest form state.
     const registerData = {
-      firstName: formValues.firstName,
-      lastName: formValues.lastName,
-      email: formValues.email.toLowerCase(),
-      class: formValues.class,
-      studentCode: formValues.studentCode,
-      phone: formValues.phone,
-      password: formValues.password
+      firstName: currentValues.firstName,
+      lastName: currentValues.lastName,
+      email: currentValues.email.toLowerCase(),
+      class: currentValues.class,
+      studentCode: currentValues.studentCode,
+      phone: sanitizedPhone,
+      password: currentValues.password
     }
     // @ts-ignore - The type is defined in the hook's JSDoc
     registerUser(registerData)
@@ -91,6 +130,13 @@ const RegisterPage = () => {
               name="register"
               layout="vertical"
               onFinish={onFinish}
+              onFinishFailed={({ errorFields }) => {
+                const phoneFieldError = errorFields.find(field => field.name?.[0] === 'phone')?.errors?.[0]
+
+                if (phoneFieldError) {
+                  message.error(phoneFieldError)
+                }
+              }}
               onValuesChange={handleFormChange}
               initialValues={formValues}
               autoComplete="off"
@@ -223,24 +269,36 @@ const RegisterPage = () => {
                       </Text>
                     }
                     name="phone"
+                    validateTrigger="onBlur"
                     rules={[
-                      { pattern: /^\d+$/, message: 'Phone number must contain only numbers' },
-                      { min: 10, message: 'Phone number must be at least 10 digits' },
-                      { max: 20, message: 'Phone number cannot exceed 20 digits' }
+                      { validator: validatePhoneNumber }
                     ]}
                     hasFeedback={!!formValues.phone}
                     className="!mb-1"
                   >
                     <Input
                       placeholder="Phone Number"
-                      maxLength={20}
+                      inputMode="numeric"
+                      maxLength={10}
                       onChange={e => {
-                        const numericValue = e.target.value.replace(/\D/g, '').slice(0, 20)
+                        const numericValue = sanitizePhoneNumber(e.target.value).slice(0, 10)
                         form.setFieldValue('phone', numericValue)
                         setFormValues(prevValues => ({
                           ...prevValues,
                           phone: numericValue
                         }))
+
+                        if (numericValue.length < 10) {
+                          form.setFields([
+                            {
+                              name: 'phone',
+                              errors: []
+                            }
+                          ])
+                          return
+                        }
+
+                        form.validateFields(['phone']).catch(() => {})
                       }}
                       className="!h-11 !rounded-md !border !border-gray-200 !bg-gray-50 !px-4 !py-2.5 !text-base"
                     />
