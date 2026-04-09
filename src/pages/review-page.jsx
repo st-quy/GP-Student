@@ -434,18 +434,24 @@ const ReviewPage = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState(null)
+  const [accessDeniedMessage, setAccessDeniedMessage] = useState(null)
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true)
+        setAccessDeniedMessage(null)
         const response = await fetchExamReview(id)
         if (response && response.data) {
           setData(response.data)
         }
       } catch (error) {
         console.error('Load review error:', error)
-        message.error('Unable to download review results.')
+        if (error.response && error.response.status === 403) {
+          setAccessDeniedMessage(error.response.data.message || 'Access Denied')
+        } else {
+          message.error('Unable to download review results.')
+        }
       } finally {
         setLoading(false)
       }
@@ -453,7 +459,28 @@ const ReviewPage = () => {
     if (id) loadData()
   }, [id])
 
-  if (loading) return <Spin size="large" className="flex h-screen items-center justify-center" />
+  if (loading && !data) return <Spin size="large" className="flex h-screen items-center justify-center" />
+  
+  if (accessDeniedMessage) {
+    return (
+      <Layout className="min-h-screen bg-white">
+        <SharedHeader />
+        <Content className="mx-auto flex w-full max-w-7xl items-center justify-center p-6" style={{ marginTop: '10vh' }}>
+          <div className="flex max-w-lg flex-col items-center justify-center rounded-xl border border-red-200 bg-red-50 p-10 text-center shadow-sm">
+            <WarningOutlined className="mb-4 text-5xl text-red-500" />
+            <Title level={3} className="!mb-2 !text-red-700">Access Denied</Title>
+            <Text className="text-lg text-red-600">{accessDeniedMessage}</Text>
+            <div className="mt-6">
+              <Button type="primary" onClick={() => navigate(-1)} size="large" danger>
+                Go Back
+              </Button>
+            </div>
+          </div>
+        </Content>
+      </Layout>
+    )
+  }
+
   if (!data) return <Empty description="No data found" className="mt-20" />
 
   const skills = [
