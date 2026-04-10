@@ -99,17 +99,19 @@ const StudentHistory = ({ userId }) => {
           >
             {text}
           </Link>
-          <Link
-            to={`/review/${record.id}`}
-            style={{
-              color: '#52c41a',
-              fontSize: '12px',
-              fontWeight: 500,
-              textDecoration: 'underline'
-            }}
-          >
-            Detailed Review
-          </Link>
+          {record.isPublished && (
+            <Link
+              to={`/review/${record.id}`}
+              style={{
+                color: '#52c41a',
+                fontSize: '12px',
+                fontWeight: 500,
+                textDecoration: 'underline'
+              }}
+            >
+              Detailed Review
+            </Link>
+          )}
         </div>
       )
     },

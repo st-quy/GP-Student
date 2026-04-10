@@ -379,21 +379,52 @@ const ReadingInlineResult = ({ question }) => {
 
 const OrderingResult = ({ question }) => {
   let userList = []
-  let correctList = []
+  let correctMap = {}
   try {
-    const rawUser = question.userResponse?.text
-    if (rawUser) userList = typeof rawUser === 'string' ? JSON.parse(rawUser) : rawUser
+    const raw = question.userResponse?.text
+    if (raw) {
+      userList = typeof raw === 'string' ? JSON.parse(raw) : raw
+    }
+  } catch (e) {}
+
+  try {
     const rawContent = question.resources?.answerContent || question.AnswerContent
     const contentObj = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent
-    correctList = contentObj?.correctAnswer || []
+    if (contentObj?.correctAnswer && Array.isArray(contentObj.correctAnswer)) {
+      contentObj.correctAnswer.forEach(item => {
+        correctMap[item.value] = String(item.key).trim()
+      })
+    }
   } catch (e) {}
+
+  const correctOrders = Object.keys(correctMap).map(k => Number(k)).sort((a, b) => a - b)
+
   return (
-    <div className="mt-6 flex flex-col gap-6">
-      <SideBySideReview 
-        userValue={Array.isArray(userList) ? userList.map(u => `${u.value}. ${u.key}`).join(' | ') : 'No answer'}
-        correctValue={Array.isArray(correctList) ? correctList.map(c => `${c.key}. ${c.value}`).join(' | ') : 'N/A'}
-        isCorrect={!!question.isCorrect}
-      />
+    <div className="mt-4 flex flex-col gap-4">
+      {correctOrders.map((order, idx) => {
+        const userItem = userList?.find(u => Number(u.value) === order)
+        const content = userItem ? String(userItem.key).trim() : 'No answer'
+        const correctContentForThisSlot = correctMap[order]
+        const isCorrectPosition = correctContentForThisSlot === content
+
+        return (
+          <div key={idx} className="rounded-lg border border-gray-200 p-4">
+            <div className="mb-2 text-sm font-medium text-gray-500">Position {order}</div>
+            <div className="flex flex-col gap-2">
+              <div className={`rounded-md border p-3 ${isCorrectPosition ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}`}>
+                <div className="mb-1 text-xs font-semibold uppercase text-gray-400">Your Answer</div>
+                <div className={`font-medium ${isCorrectPosition ? 'text-green-700' : 'text-red-700'}`}>{content}</div>
+              </div>
+              {!isCorrectPosition && correctContentForThisSlot && (
+                <div className="rounded-md border border-green-300 bg-green-50 p-3">
+                  <div className="mb-1 text-xs font-semibold uppercase text-gray-400">Correct Answer</div>
+                  <div className="font-medium text-green-700">{correctContentForThisSlot}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }

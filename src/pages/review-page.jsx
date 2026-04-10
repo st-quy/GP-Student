@@ -278,7 +278,7 @@ const OrderingResult = ({ question }) => {
   const correctOrders = Object.keys(correctMap).map(k => Number(k)).sort((a, b) => a - b)
 
   return (
-    <div className="mt-4 flex flex-col gap-3">
+    <div className="mt-4 flex flex-col gap-4">
       {correctOrders.map((order, idx) => {
         const userItem = userList?.find(u => Number(u.value) === order)
         const content = userItem ? String(userItem.key).trim() : 'No answer'
@@ -286,21 +286,20 @@ const OrderingResult = ({ question }) => {
         const isCorrectPosition = correctContentForThisSlot === content
 
         return (
-          <div key={idx} className={`flex items-center rounded-lg border p-3 ${isCorrectPosition ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
-            <div className="mr-3 flex h-8 w-8 items-center justify-center rounded bg-[#003087] text-white font-bold">
-              {order}
-            </div>
-            <div className="flex-1 text-sm font-medium">
-              {content}
-            </div>
-            {isCorrectPosition ? (
-              <CheckCircleFilled className="text-green-500" />
-            ) : (
-              <div className="flex flex-col items-end">
-                 <CloseCircleFilled className="text-red-500" />
-                 <Text size="small" type="success" className="text-xs mt-1">Correct: {correctContentForThisSlot}</Text>
+          <div key={idx} className="rounded-lg border border-gray-200 p-4">
+            <div className="mb-2 text-sm font-medium text-gray-500">Position {order}</div>
+            <div className="flex flex-col gap-2">
+              <div className={`rounded-md border p-3 ${isCorrectPosition ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}`}>
+                <div className="mb-1 text-xs font-semibold uppercase text-gray-400">Your Answer</div>
+                <div className={`font-medium ${isCorrectPosition ? 'text-green-700' : 'text-red-700'}`}>{content}</div>
               </div>
-            )}
+              {!isCorrectPosition && correctContentForThisSlot && (
+                <div className="rounded-md border border-green-300 bg-green-50 p-3">
+                  <div className="mb-1 text-xs font-semibold uppercase text-gray-400">Correct Answer</div>
+                  <div className="font-medium text-green-700">{correctContentForThisSlot}</div>
+                </div>
+              )}
+            </div>
           </div>
         )
       })}
