@@ -196,6 +196,7 @@ const Profile = () => {
         })
 
         message.success('Avatar updated successfully!')
+        window.location.reload()
       } catch (error) {
         console.error('Avatar upload failed:', error)
         message.error('Failed to upload avatar. Please try again.')
