@@ -243,14 +243,28 @@ const DropdownListResult = ({ question }) => {
   } catch (e) {
     // Silently ignore parsing errors
   }
-  
+
+  const isPrefilled = (key) => {
+    try {
+      const rawContent = question.resources?.answerContent || question.AnswerContent
+      const contentObj = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent
+      if (contentObj?.options && Array.isArray(contentObj.options)) {
+        const opt = contentObj.options.find(o => String(o.key).trim() === String(key).trim())
+        return opt && Array.isArray(opt.value) && opt.value.length === 1
+      }
+    } catch (e) {}
+    return false
+  }
+
   return (
     <div className="mt-6 flex flex-col gap-4">
-      {correctAnswers.map((item, idx) => {
+      {correctAnswers.filter(item => !isPrefilled(item.key || item.left)).map((item, idx) => {
         const keyText = item.key || item.left || String(idx + 1)
         const keyForMap = normalizeKey(keyText)
         const correctVal = item.value || item.right
-        const userVal = userAnswersMap[keyForMap]
+        let userVal = userAnswersMap[keyForMap]
+        if (userVal === undefined) userVal = userAnswersMap[String(idx)]
+        if (userVal === undefined) userVal = userAnswersMap[String(idx + 1)]
         const isCorrect = String(userVal || '').trim().toLowerCase() === String(correctVal || '').trim().toLowerCase()
         return (
           <div key={idx} className="border-b border-gray-100 pb-4 last:border-0">

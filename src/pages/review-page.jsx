@@ -205,17 +205,33 @@ const DropdownListResult = ({ question }) => {
 
   const rowsToRender = leftItems.length > 0 ? leftItems : correctAnswers.map(c => c.key)
 
+  const isPrefilled = (key) => {
+    try {
+      const rawContent = question.resources?.answerContent || question.AnswerContent
+      const contentObj = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent
+      if (contentObj?.options && Array.isArray(contentObj.options)) {
+        const opt = contentObj.options.find(o => String(o.key).trim() === String(key).trim())
+        return opt && Array.isArray(opt.value) && opt.value.length === 1
+      }
+    } catch (e) {}
+    return false
+  }
+
   return (
     <div className="mt-4 flex flex-col gap-3">
       {rowsToRender.map((rowKey, idx) => {
-        const normalize = str => String(str || '').trim().toLowerCase()
         const rawKeyText = typeof rowKey === 'string' ? rowKey : rowKey?.key || `Question ${idx + 1}`
+        
+        if (isPrefilled(rawKeyText)) return null
+        
+        const normalize = str => String(str || '').trim().toLowerCase()
         
         let correctItem = correctAnswers.find(c => String(c.key) === String(idx + 1))
         if (!correctItem) correctItem = correctAnswers[idx]
 
         let userSelectedValue = userAnswersMap[normalize(rawKeyText)]
         if (userSelectedValue === undefined) userSelectedValue = userAnswersMap[String(idx)]
+        if (userSelectedValue === undefined) userSelectedValue = userAnswersMap[String(idx + 1)]
 
         const hasAnswer = userSelectedValue !== undefined && userSelectedValue !== null && userSelectedValue !== ''
         const isCorrect = hasAnswer && correctItem && normalize(userSelectedValue) === normalize(correctItem.value)
