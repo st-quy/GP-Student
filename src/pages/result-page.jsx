@@ -792,7 +792,7 @@ const ResultPage = () => {
         <div className="mb-8 flex flex-col items-center justify-between rounded-xl bg-[#003087] p-6 text-white shadow-lg md:flex-row">
           <div><h2 className="mb-1 text-2xl font-bold capitalize">{activeTab} Performance</h2><p className="text-blue-100 opacity-90">Great job! You demonstrated strong communication skills.</p></div>
           <div className="mt-4 flex gap-8 md:mt-0">
-            <div className="text-center"><div className="text-4xl font-bold">{currentSkillData?.score || 0}<span className="text-2xl font-normal text-blue-300">/{maxScore}</span></div><div className="text-xs uppercase opacity-80">Score</div></div>
+            <div className="text-center"><div className="text-4xl font-bold">{currentSkillData?.score || 0}</div><div className="text-xs uppercase opacity-80">Score</div></div>
             <div className="text-center"><div className="text-4xl font-bold">{['writing', 'speaking'].includes(activeTab) ? '--' : `${countGreenQuestions}/${sortedCurrentQuestions.length}`}</div><div className="text-xs uppercase tracking-wider opacity-80">Correct</div></div>
             <div className="text-center"><div className="text-4xl font-bold">{data.participantInfo.timeSpent || '28m'}</div><div className="text-xs uppercase tracking-wider opacity-80">Time Spent</div></div>
           </div>
