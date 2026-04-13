@@ -40,7 +40,17 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
   const questions = (data.Questions || []).sort((a, b) => a.Sequence - b.Sequence)
   const totalQuestions = questions.length
   const getTimePair = index => {
-    return { read: '00:05', answer: '00:05' }
+    const content = (data.Content || '').toLowerCase()
+
+    if (content.includes('part 1')) {
+      return { read: '00:05', answer: '00:30' }
+    } else if (content.includes('part 2') || content.includes('part 3')) {
+      return { read: '00:05', answer: '00:45' }
+    } else if (isPart4) {
+      return { read: '01:00', answer: '02:00' }
+    }
+
+    return timePairs[index] || timePairs[timePairs.length - 1] || { read: '00:05', answer: '00:30' }
   }
 
   const currentQuestion = questions[currentQuestionIndex]
@@ -95,7 +105,7 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
             if (phase === 'reading') {
               if (isPart4) {
                 setPhase('preparing')
-                setCountdown(5)
+                setCountdown(60)
               } else {
                 setPhase('answering')
                 setCountdown(parseTime(currentTimePair.answer))

@@ -8,12 +8,12 @@ const PartIntro = ({ data, onStartPart }) => {
           title: 'Part 1: Personal Information',
           description: 'You will be asked to answer questions about yourself and your experiences.',
           readingTime: '05 seconds',
-          answeringTime: '05 seconds',
+          answeringTime: '30 seconds',
           totalQuestions: 3,
           instructions: [
             'You will be asked 3 questions about yourself',
             'You have 5 seconds to read each question',
-            'You have 5 seconds to answer each question',
+            'You have 30 seconds to answer each question',
             'Speak clearly and naturally',
             'Try to give complete answers'
           ]
@@ -23,12 +23,12 @@ const PartIntro = ({ data, onStartPart }) => {
           title: 'Part 2: Picture Description',
           description: 'You will be shown a picture and asked to describe it in detail.',
           readingTime: '05 seconds',
-          answeringTime: '05 seconds',
+          answeringTime: '45 seconds',
           totalQuestions: 3,
           instructions: [
             'You will be shown a picture',
             'You have 5 seconds to look at the picture',
-            'You have 5 seconds to describe the picture',
+            'You have 45 seconds to describe the picture',
             'Describe what you see in detail',
             'Use descriptive language'
           ]
@@ -38,13 +38,13 @@ const PartIntro = ({ data, onStartPart }) => {
           title: 'Part 3: Picture Discussion',
           description: 'You will be shown a picture and asked to answer related questions.',
           readingTime: '05 seconds',
-          answeringTime: '05 seconds',
+          answeringTime: '45 seconds',
           totalQuestions: 3,
           instructions: [
             'You will be shown a picture',
             'You have 5 seconds to look at the picture',
             'You will be asked 3 questions about the picture',
-            'You have 5 seconds to answer each question',
+            'You have 45 seconds to answer each question',
             'Answer the questions based on the picture'
           ]
         }
@@ -52,15 +52,15 @@ const PartIntro = ({ data, onStartPart }) => {
         return {
           title: 'Part 4: Topic Discussion',
           description: 'You will be asked to discuss a topic in detail with multiple questions.',
-          preparingTime: '05 seconds',
+          preparingTime: '60 seconds',
           readingTime: '05 seconds',
-          answeringTime: '05 seconds',
+          answeringTime: '120 seconds',
           totalQuestions: 3,
           instructions: [
             'You will be shown a topic with multiple questions',
             'You have 5 seconds to read the questions',
-            'You have 5 seconds to prepare your answer',
-            'You have 5 seconds to answer all questions',
+            'You have 60 seconds to prepare your answer',
+            'You have 120 seconds to answer all questions',
             'Organize your thoughts and speak clearly',
             'Try to cover all aspects of the topic'
           ]
