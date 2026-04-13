@@ -107,7 +107,6 @@ const MultipleChoiceResult = ({ question }) => {
       .trim()
       .toLowerCase()
   const userAns = normalize(question.userResponse?.text)
-  const correctAns = normalize(question.correctAnswer)
 
   if (!options.length) return <div className="italic text-gray-400">No options available.</div>
 
@@ -120,15 +119,15 @@ const MultipleChoiceResult = ({ question }) => {
         const currentOptKey = normalize(optKey)
         const currentOptValue = normalize(optValue)
 
-        const isTrueAnswer = currentOptKey === correctAns || currentOptValue === correctAns
         const isUserSelected = currentOptKey === userAns || currentOptValue === userAns
+        const isCorrect = !!question.isCorrect
 
         let containerClass = 'border-gray-200 bg-white'
         let keyBoxClass = 'bg-white text-gray-500 border-r border-gray-200'
         let icon = null
 
         if (isUserSelected) {
-          if (isTrueAnswer) {
+          if (isCorrect) {
             containerClass = 'border-green-500 bg-[#F6FFED]'
             keyBoxClass = 'bg-[#52C41A] text-white'
             icon = <CheckCircleFilled className="text-xl text-[#52C41A]" />
@@ -137,10 +136,6 @@ const MultipleChoiceResult = ({ question }) => {
             keyBoxClass = 'bg-[#FF4D4F] text-white'
             icon = <CloseCircleFilled className="text-xl text-[#FF4D4F]" />
           }
-        } else if (isTrueAnswer) {
-             // In review page, we might want to show the correct answer even if user didn't select it
-             // But the prompt says "badge Đúng/Sai" for "SV chọn".
-             // Let's keep it similar to result page but maybe show correct answer clearly.
         }
 
         return (
@@ -257,12 +252,6 @@ const DropdownListResult = ({ question }) => {
                   {userSelectedValue || 'None'}
                 </Text>
               </div>
-              {!isCorrect && correctItem && (
-                <div className="text-sm">
-                  <Text type="secondary">Correct answer: </Text>
-                  <Text type="success" strong>{correctItem.value}</Text>
-                </div>
-              )}
             </div>
           </div>
         )
@@ -309,12 +298,6 @@ const OrderingResult = ({ question }) => {
                 <div className="mb-1 text-xs font-semibold uppercase text-gray-400">Your Answer</div>
                 <div className={`font-medium ${isCorrectPosition ? 'text-green-700' : 'text-red-700'}`}>{content}</div>
               </div>
-              {!isCorrectPosition && correctContentForThisSlot && (
-                <div className="rounded-md border border-green-300 bg-green-50 p-3">
-                  <div className="mb-1 text-xs font-semibold uppercase text-gray-400">Correct Answer</div>
-                  <div className="font-medium text-green-700">{correctContentForThisSlot}</div>
-                </div>
-              )}
             </div>
           </div>
         )
@@ -356,9 +339,8 @@ const GroupAnswerComparison = ({ question }) => {
       {subQuestions.map((subQ, index) => {
         const subID = String(subQ.ID)
         const userVal = userAnswersMap[subID] || userAnswersMap[String(index + 1)]
-        const correctVal = subQ.correctAnswer
         const normalize = s => String(s || '').trim().toLowerCase()
-        const isCorrect = normalize(userVal) === normalize(correctVal)
+        const isCorrect = normalize(userVal) === normalize(subQ.correctAnswer)
 
         return (
           <div key={index} className="rounded-lg border border-gray-100 p-4 bg-gray-50">
@@ -373,12 +355,6 @@ const GroupAnswerComparison = ({ question }) => {
                  <Text type="secondary">Your answer: </Text>
                  <Text type={isCorrect ? 'success' : 'danger'}>{userVal || 'None'}</Text>
                </div>
-               {!isCorrect && (
-                 <div className="text-sm">
-                   <Text type="secondary">Correct answer: </Text>
-                   <Text type="success" strong>{correctVal}</Text>
-                 </div>
-               )}
             </div>
           </div>
         )
@@ -417,7 +393,7 @@ const AnswerComparison = ({ question }) => {
   if (qType === 'dropdown-list' || qType === 'matching') return <DropdownListResult question={question} />
 
   // Fallback
-  const { userResponse, correctAnswer, isCorrect } = question
+  const { userResponse, isCorrect } = question
   return (
     <div className="mt-4">
       <div className={`rounded-lg border p-4 ${isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
@@ -430,12 +406,6 @@ const AnswerComparison = ({ question }) => {
              <Text type="secondary">Your answer: </Text>
              <Text strong>{formatAnswerText(userResponse?.text)}</Text>
            </div>
-           {!isCorrect && (
-             <div>
-               <Text type="secondary">Correct answer: </Text>
-               <Text type="success" strong>{formatAnswerText(correctAnswer)}</Text>
-             </div>
-           )}
         </div>
       </div>
     </div>

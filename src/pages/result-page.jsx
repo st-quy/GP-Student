@@ -21,13 +21,12 @@ const { Title, Text, Paragraph } = Typography
 
 // --- HELPERS ---
 
-const SideBySideReview = ({ userValue, correctValue, isCorrect }) => {
+const SideBySideReview = ({ userValue, isCorrect }) => {
   const displayUserVal = userValue || 'No answer'
-  const displayCorrectVal = correctValue || 'N/A'
 
   return (
     <div
-      className={`mt-4 grid grid-cols-1 gap-4 rounded-xl border p-4 md:grid-cols-2 ${
+      className={`mt-4 grid grid-cols-1 gap-4 rounded-xl border p-4 ${
         isCorrect ? 'border-green-100 bg-green-50/30' : 'border-red-100 bg-red-50/30'
       }`}
     >
@@ -44,14 +43,6 @@ const SideBySideReview = ({ userValue, correctValue, isCorrect }) => {
             <CloseCircleFilled className="text-base" />
           )}
           <span className="text-base font-bold">{displayUserVal}</span>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Correct Answer</span>
-        <div className="flex items-center gap-2 rounded-lg border border-green-500 bg-white p-3 text-green-600 shadow-sm">
-          <CheckCircleFilled className="text-base" />
-          <span className="text-base font-bold">{displayCorrectVal}</span>
         </div>
       </div>
     </div>
@@ -269,7 +260,7 @@ const DropdownListResult = ({ question }) => {
         return (
           <div key={idx} className="border-b border-gray-100 pb-4 last:border-0">
             <div className="mb-2 font-medium text-gray-700">Question {keyText}:</div>
-            <SideBySideReview userValue={userVal} correctValue={correctVal} isCorrect={isCorrect} />
+            <SideBySideReview userValue={userVal} isCorrect={isCorrect} />
           </div>
         )
       })}
@@ -292,9 +283,8 @@ const MultipleChoiceResult = ({ question }) => {
     } catch (e) { return String(val) }
   }
   const userAns = parseValue(question.userResponse?.text) || parseValue(question.userResponse?.answer) || parseValue(question.userResponse) || 'No answer'
-  const correctAns = parseValue(question.correctAnswer) || 'N/A'
   const isCorrect = !!question.isCorrect
-  return <SideBySideReview userValue={userAns} correctValue={correctAns} isCorrect={isCorrect} />
+  return <SideBySideReview userValue={userAns} isCorrect={isCorrect} />
 }
 
 const GroupAnswerComparison = ({ question }) => {
@@ -325,12 +315,10 @@ const GroupAnswerComparison = ({ question }) => {
       {subQuestions.map((subQ, index) => {
         const subID = String(subQ.ID || subQ.id || '').trim()
         const userVal = userAnswersMap[subID] || userAnswersMap[String(index + 1)] || userAnswersMap[`index-${index}`]
-        const correctVal = subQ.correctAnswer
-        const isCorrect = userVal && correctVal && String(userVal).trim().toLowerCase() === String(correctVal).trim().toLowerCase()
         return (
           <div key={index} className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
             <div className="mb-2 text-base font-bold text-gray-800">{index + 1}. {subQ.content || `Question ${index + 1}`}</div>
-            <SideBySideReview userValue={userVal} correctValue={correctVal} isCorrect={!!isCorrect} />
+            <SideBySideReview userValue={userVal} isCorrect={question.isCorrect} />
           </div>
         )
       })}
@@ -378,11 +366,11 @@ const ReadingInlineResult = ({ question }) => {
         {allKeys.map((key, idx) => {
           const userVal = userAnswersMap[key]
           const correctVal = correctAnswersMap[key]
-          const isCorrect = userVal && correctVal && String(userVal).trim().toLowerCase() === String(correctVal).trim().toLowerCase()
+          const isCorrect = String(userVal || '').trim().toLowerCase() === String(correctVal || '').trim().toLowerCase()
           return (
             <div key={idx}>
               <div className="mb-1 font-bold text-gray-600">Question {key}.</div>
-              <SideBySideReview userValue={userVal} correctValue={correctVal} isCorrect={!!isCorrect} />
+              <SideBySideReview userValue={userVal} isCorrect={isCorrect} />
             </div>
           )
         })}
@@ -429,12 +417,6 @@ const OrderingResult = ({ question }) => {
                 <div className="mb-1 text-xs font-semibold uppercase text-gray-400">Your Answer</div>
                 <div className={`font-medium ${isCorrectPosition ? 'text-green-700' : 'text-red-700'}`}>{content}</div>
               </div>
-              {!isCorrectPosition && correctContentForThisSlot && (
-                <div className="rounded-md border border-green-300 bg-green-50 p-3">
-                  <div className="mb-1 text-xs font-semibold uppercase text-gray-400">Correct Answer</div>
-                  <div className="font-medium text-green-700">{correctContentForThisSlot}</div>
-                </div>
-              )}
             </div>
           </div>
         )
@@ -453,7 +435,7 @@ const AnswerComparison = ({ question }) => {
   if (qType === 'dropdown-list' || qType === 'matching') return <DropdownListResult question={question} />
   const isInlineGapFill = /\d+\./.test(question.questionContent || question.Content)
   if (isInlineGapFill) return <ReadingInlineResult question={question} />
-  return <SideBySideReview userValue={formatAnswerText(question.userResponse?.text)} correctValue={formatAnswerText(question.correctAnswer)} isCorrect={!!question.isCorrect} />
+  return <SideBySideReview userValue={formatAnswerText(question.userResponse?.text)} isCorrect={!!question.isCorrect} />
 }
 
 const SubjectiveAnswerView = ({ question }) => {
