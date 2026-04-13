@@ -382,6 +382,9 @@ const ReadingInlineResult = ({ question }) => {
 const OrderingResult = ({ question }) => {
   let userList = []
   let correctMap = {}
+  let allOptions = []
+
+  // 1. Get student's answer list
   try {
     const raw = question.userResponse?.text
     if (raw) {
@@ -389,29 +392,50 @@ const OrderingResult = ({ question }) => {
     }
   } catch (e) {}
 
+  // 2. Try to get correct map (only works for Teachers/Admins)
   try {
     const rawContent = question.resources?.answerContent || question.AnswerContent
     const contentObj = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent
+    
+    // For ordering, options typically contains all possible items
+    if (contentObj?.options && Array.isArray(contentObj.options)) {
+      allOptions = contentObj.options;
+    }
+
     if (contentObj?.correctAnswer && Array.isArray(contentObj.correctAnswer)) {
       contentObj.correctAnswer.forEach(item => {
-        correctMap[item.value] = String(item.key).trim()
+        if (item.value !== "hidden") {
+          correctMap[item.value] = String(item.key).trim()
+        }
       })
     }
   } catch (e) {}
 
-  const correctOrders = Object.keys(correctMap).map(k => Number(k)).sort((a, b) => a - b)
+  // 3. Determine how many positions to show
+  // If we have student answers, use that. If not, use the total number of options.
+  const maxPosition = Math.max(
+    userList.length, 
+    allOptions.length,
+    Object.keys(correctMap).length
+  )
+  
+  const positions = Array.from({ length: maxPosition }, (_, i) => i + 1)
 
   return (
     <div className="mt-4 flex flex-col gap-4">
-      {correctOrders.map((order, idx) => {
-        const userItem = userList?.find(u => Number(u.value) === order)
+      {positions.map((pos) => {
+        const userItem = userList?.find(u => Number(u.value) === pos)
         const content = userItem ? String(userItem.key).trim() : 'No answer'
-        const correctContentForThisSlot = correctMap[order]
-        const isCorrectPosition = correctContentForThisSlot === content
+        
+        const correctContentForThisSlot = correctMap[pos]
+        // If correctMap is empty or hidden (student view), we don't show individual correctness per slot
+        // unless the whole question is marked as correct
+        const hasCorrectMap = Object.keys(correctMap).length > 0
+        const isCorrectPosition = hasCorrectMap ? (correctContentForThisSlot === content) : !!question.isCorrect
 
         return (
-          <div key={idx} className="rounded-lg border border-gray-200 p-4">
-            <div className="mb-2 text-sm font-medium text-gray-500">Position {order}</div>
+          <div key={pos} className="rounded-lg border border-gray-200 p-4">
+            <div className="mb-2 text-sm font-medium text-gray-500">Position {pos}</div>
             <div className="flex flex-col gap-2">
               <div className={`rounded-md border p-3 ${isCorrectPosition ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}`}>
                 <div className="mb-1 text-xs font-semibold uppercase text-gray-400">Your Answer</div>
@@ -516,19 +540,23 @@ const ScoreSummaryCharts = ({ skills, participantInfo }) => {
 
 const checkIsFullyCorrect = (q) => {
   const rawUser = q.userResponse?.text
+  
+  // If backend already marked as correct, trust it unconditionally
+  if (q.isCorrect) return true
+  
   if (!rawUser || rawUser === '[]' || rawUser === '' || rawUser === '{}') return false
   
   try {
-    // If backend already marked as correct, trust it
-    if (q.isCorrect) return true
-    
-    // For speaking and writing, always correct if there's a response
+    // For speaking and writing, always correct if there's a response (and not already false from backend)
     const type = (q.type || '').toLowerCase()
     if (['speaking', 'writing'].includes(type)) return !!rawUser
     
     // For other question types, apply all-or-nothing logic matching backend
     const correctAnswer = q.correctAnswer
-    if (!correctAnswer) return false
+    
+    // If ground truth is hidden (security measure), we MUST rely on the backend isCorrect flag
+    // which we already checked at the top of this function.
+    if (!correctAnswer || correctAnswer === "hidden") return q.isCorrect || false
     
     const normalizeKey = (k) => {
       return String(k || '').trim().split('.')[0]

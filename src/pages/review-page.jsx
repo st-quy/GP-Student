@@ -263,6 +263,9 @@ const DropdownListResult = ({ question }) => {
 const OrderingResult = ({ question }) => {
   let userList = []
   let correctMap = {}
+  let allOptions = []
+
+  // 1. Get student's answer list
   try {
     const raw = question.userResponse?.text
     if (raw) {
@@ -270,29 +273,47 @@ const OrderingResult = ({ question }) => {
     }
   } catch (e) {}
 
+  // 2. Try to get correct map (only works for Teachers/Admins)
   try {
     const rawContent = question.resources?.answerContent || question.AnswerContent
     const contentObj = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent
+    
+    // For ordering, options typically contains all possible items
+    if (contentObj?.options && Array.isArray(contentObj.options)) {
+      allOptions = contentObj.options;
+    }
+
     if (contentObj?.correctAnswer && Array.isArray(contentObj.correctAnswer)) {
       contentObj.correctAnswer.forEach(item => {
-        correctMap[item.value] = String(item.key).trim()
+        if (item.value !== "hidden") {
+          correctMap[item.value] = String(item.key).trim()
+        }
       })
     }
   } catch (e) {}
 
-  const correctOrders = Object.keys(correctMap).map(k => Number(k)).sort((a, b) => a - b)
+  // 3. Determine how many positions to show
+  const maxPosition = Math.max(
+    userList.length, 
+    allOptions.length,
+    Object.keys(correctMap).length
+  )
+  
+  const positions = Array.from({ length: maxPosition }, (_, i) => i + 1)
 
   return (
     <div className="mt-4 flex flex-col gap-4">
-      {correctOrders.map((order, idx) => {
-        const userItem = userList?.find(u => Number(u.value) === order)
+      {positions.map((pos) => {
+        const userItem = userList?.find(u => Number(u.value) === pos)
         const content = userItem ? String(userItem.key).trim() : 'No answer'
-        const correctContentForThisSlot = correctMap[order]
-        const isCorrectPosition = correctContentForThisSlot === content
+        
+        const correctContentForThisSlot = correctMap[pos]
+        const hasCorrectMap = Object.keys(correctMap).length > 0
+        const isCorrectPosition = hasCorrectMap ? (correctContentForThisSlot === content) : !!question.isCorrect
 
         return (
-          <div key={idx} className="rounded-lg border border-gray-200 p-4">
-            <div className="mb-2 text-sm font-medium text-gray-500">Position {order}</div>
+          <div key={pos} className="rounded-lg border border-gray-200 p-4">
+            <div className="mb-2 text-sm font-medium text-gray-500">Position {pos}</div>
             <div className="flex flex-col gap-2">
               <div className={`rounded-md border p-3 ${isCorrectPosition ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}`}>
                 <div className="mb-1 text-xs font-semibold uppercase text-gray-400">Your Answer</div>
