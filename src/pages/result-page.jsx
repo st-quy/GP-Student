@@ -256,7 +256,14 @@ const DropdownListResult = ({ question }) => {
         let userVal = userAnswersMap[keyForMap]
         if (userVal === undefined) userVal = userAnswersMap[String(idx)]
         if (userVal === undefined) userVal = userAnswersMap[String(idx + 1)]
-        const isCorrect = String(userVal || '').trim().toLowerCase() === String(correctVal || '').trim().toLowerCase()
+        
+        let isCorrect = false;
+        if (question.correctnessMap && question.correctnessMap[keyForMap] !== undefined) {
+          isCorrect = question.correctnessMap[keyForMap];
+        } else {
+          isCorrect = String(userVal || '').trim().toLowerCase() === String(correctVal || '').trim().toLowerCase()
+        }
+
         return (
           <div key={idx} className="border-b border-gray-100 pb-4 last:border-0">
             <div className="mb-2 font-medium text-gray-700">Question {keyText}:</div>
@@ -315,10 +322,20 @@ const GroupAnswerComparison = ({ question }) => {
       {subQuestions.map((subQ, index) => {
         const subID = String(subQ.ID || subQ.id || '').trim()
         const userVal = userAnswersMap[subID] || userAnswersMap[String(index + 1)] || userAnswersMap[`index-${index}`]
+        
+        let isCorrect = false;
+        if (question.correctnessMap && question.correctnessMap[subID] !== undefined) {
+          isCorrect = question.correctnessMap[subID];
+        } else if (question.correctnessMap && question.correctnessMap[String(index + 1)] !== undefined) {
+          isCorrect = question.correctnessMap[String(index + 1)];
+        } else {
+          isCorrect = !!question.isCorrect;
+        }
+
         return (
           <div key={index} className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
             <div className="mb-2 text-base font-bold text-gray-800">{index + 1}. {subQ.content || `Question ${index + 1}`}</div>
-            <SideBySideReview userValue={userVal} isCorrect={question.isCorrect} />
+            <SideBySideReview userValue={userVal} isCorrect={isCorrect} />
           </div>
         )
       })}
@@ -366,7 +383,15 @@ const ReadingInlineResult = ({ question }) => {
         {allKeys.map((key, idx) => {
           const userVal = userAnswersMap[key]
           const correctVal = correctAnswersMap[key]
-          const isCorrect = String(userVal || '').trim().toLowerCase() === String(correctVal || '').trim().toLowerCase()
+          
+          // Use backend provided correctness map if ground truth is masked
+          let isCorrect = false;
+          if (question.correctnessMap && question.correctnessMap[key] !== undefined) {
+            isCorrect = question.correctnessMap[key];
+          } else {
+            isCorrect = String(userVal || '').trim().toLowerCase() === String(correctVal || '').trim().toLowerCase()
+          }
+
           return (
             <div key={idx}>
               <div className="mb-1 font-bold text-gray-600">Question {key}.</div>

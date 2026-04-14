@@ -229,7 +229,15 @@ const DropdownListResult = ({ question }) => {
         if (userSelectedValue === undefined) userSelectedValue = userAnswersMap[String(idx + 1)]
 
         const hasAnswer = userSelectedValue !== undefined && userSelectedValue !== null && userSelectedValue !== ''
-        const isCorrect = hasAnswer && correctItem && normalize(userSelectedValue) === normalize(correctItem.value)
+        
+        let isCorrect = false;
+        if (question.correctnessMap && question.correctnessMap[normalize(rawKeyText)] !== undefined) {
+          isCorrect = question.correctnessMap[normalize(rawKeyText)];
+        } else if (question.correctnessMap && question.correctnessMap[String(idx + 1)] !== undefined) {
+          isCorrect = question.correctnessMap[String(idx + 1)];
+        } else {
+          isCorrect = hasAnswer && correctItem && normalize(userSelectedValue) === normalize(correctItem.value)
+        }
 
         return (
           <div key={idx} className="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0">
@@ -309,7 +317,15 @@ const OrderingResult = ({ question }) => {
         
         const correctContentForThisSlot = correctMap[pos]
         const hasCorrectMap = Object.keys(correctMap).length > 0
-        const isCorrectPosition = hasCorrectMap ? (correctContentForThisSlot === content) : !!question.isCorrect
+        
+        let isCorrectPosition = false;
+        if (question.correctnessMap && question.correctnessMap[pos] !== undefined) {
+          isCorrectPosition = question.correctnessMap[pos];
+        } else if (hasCorrectMap) {
+          isCorrectPosition = (correctContentForThisSlot === content);
+        } else {
+          isCorrectPosition = !!question.isCorrect;
+        }
 
         return (
           <div key={pos} className="rounded-lg border border-gray-200 p-4">
@@ -358,10 +374,19 @@ const GroupAnswerComparison = ({ question }) => {
   return (
     <div className="mt-4 flex flex-col gap-4">
       {subQuestions.map((subQ, index) => {
-        const subID = String(subQ.ID)
+        const subID = String(subQ.ID || subQ.id || '').trim();
         const userVal = userAnswersMap[subID] || userAnswersMap[String(index + 1)]
+        
         const normalize = s => String(s || '').trim().toLowerCase()
-        const isCorrect = normalize(userVal) === normalize(subQ.correctAnswer)
+        
+        let isCorrect = false;
+        if (question.correctnessMap && question.correctnessMap[subID] !== undefined) {
+          isCorrect = question.correctnessMap[subID];
+        } else if (question.correctnessMap && question.correctnessMap[String(index + 1)] !== undefined) {
+          isCorrect = question.correctnessMap[String(index + 1)];
+        } else {
+          isCorrect = normalize(userVal) === normalize(subQ.correctAnswer)
+        }
 
         return (
           <div key={index} className="rounded-lg border border-gray-100 p-4 bg-gray-50">
