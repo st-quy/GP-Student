@@ -160,45 +160,38 @@ const MultipleChoiceResult = ({ question }) => {
 
 const DropdownListResult = ({ question }) => {
   let userAnswersMap = {}
+  const normalizeKey = (k) => {
+    return String(k || '').trim().split('.')[0];
+  }
+  
   try {
     const raw = question.userResponse?.text
     if (raw) {
       let parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
       if (Array.isArray(parsed)) {
         parsed.forEach(item => {
-          const k = item.key || item.left || item.questionId
-          const v = item.value || item.right || item.answerText
-          if (k) userAnswersMap[String(k).trim().toLowerCase()] = v
+          const k = normalizeKey(item.key || item.left || item.id || item.questionId)
+          const v = item.value || item.right || item.answerText || item.text
+          if (k) userAnswersMap[k] = v
         })
-      } else if (typeof parsed === 'object' && parsed !== null) {
+      } else if (typeof parsed === 'object') {
         Object.entries(parsed).forEach(([k, v]) => {
-          userAnswersMap[String(k).trim().toLowerCase()] = v
+          userAnswersMap[normalizeKey(k)] = v
         })
       }
     }
   } catch (e) {}
 
   let correctAnswers = []
-  let leftItems = []
-
   try {
     const rawContent = question.resources?.answerContent || question.AnswerContent
     const contentObj = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent
-    if (contentObj) {
-      if (contentObj.correctAnswer) {
-        const rawCorrect = Array.isArray(contentObj.correctAnswer)
-          ? contentObj.correctAnswer
-          : Object.entries(contentObj.correctAnswer).map(([k, v]) => ({ key: k, value: v }))
-        correctAnswers = rawCorrect.map(item => ({
-          key: item.key !== undefined ? item.key : item.left,
-          value: item.value !== undefined ? item.value : item.right
-        }))
-      }
-      if (contentObj.leftItems) leftItems = contentObj.leftItems
+    if (contentObj?.correctAnswer) {
+      correctAnswers = Array.isArray(contentObj.correctAnswer) 
+        ? contentObj.correctAnswer 
+        : Object.entries(contentObj.correctAnswer).map(([k, v]) => ({ key: k, value: v }))
     }
   } catch (e) {}
-
-  const rowsToRender = leftItems.length > 0 ? leftItems : correctAnswers.map(c => c.key)
 
   const isPrefilled = (key) => {
     try {
@@ -214,35 +207,27 @@ const DropdownListResult = ({ question }) => {
 
   return (
     <div className="mt-4 flex flex-col gap-3">
-      {rowsToRender.map((rowKey, idx) => {
-        const rawKeyText = typeof rowKey === 'string' ? rowKey : rowKey?.key || `Question ${idx + 1}`
+      {correctAnswers.filter(item => !isPrefilled(item.key || item.left)).map((item, idx) => {
+        const keyText = item.key || item.left || String(idx + 1)
+        const keyForMap = normalizeKey(keyText)
+        const correctVal = item.value || item.right
+        let userVal = userAnswersMap[keyForMap]
+        if (userVal === undefined) userVal = userAnswersMap[String(idx)]
+        if (userVal === undefined) userVal = userAnswersMap[String(idx + 1)]
         
-        if (isPrefilled(rawKeyText)) return null
-        
-        const normalize = str => String(str || '').trim().toLowerCase()
-        
-        let correctItem = correctAnswers.find(c => String(c.key) === String(idx + 1))
-        if (!correctItem) correctItem = correctAnswers[idx]
-
-        let userSelectedValue = userAnswersMap[normalize(rawKeyText)]
-        if (userSelectedValue === undefined) userSelectedValue = userAnswersMap[String(idx)]
-        if (userSelectedValue === undefined) userSelectedValue = userAnswersMap[String(idx + 1)]
-
-        const hasAnswer = userSelectedValue !== undefined && userSelectedValue !== null && userSelectedValue !== ''
+        const hasAnswer = userVal !== undefined && userVal !== null && userVal !== ''
         
         let isCorrect = false;
-        if (question.correctnessMap && question.correctnessMap[normalize(rawKeyText)] !== undefined) {
-          isCorrect = question.correctnessMap[normalize(rawKeyText)];
-        } else if (question.correctnessMap && question.correctnessMap[String(idx + 1)] !== undefined) {
-          isCorrect = question.correctnessMap[String(idx + 1)];
+        if (question.correctnessMap && question.correctnessMap[keyForMap] !== undefined) {
+          isCorrect = question.correctnessMap[keyForMap];
         } else {
-          isCorrect = hasAnswer && correctItem && normalize(userSelectedValue) === normalize(correctItem.value)
+          isCorrect = String(userVal || '').trim().toLowerCase() === String(correctVal || '').trim().toLowerCase()
         }
 
         return (
           <div key={idx} className="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0">
             <div className="flex items-center justify-between">
-              <Text strong>{rawKeyText}</Text>
+              <Text strong>{keyText}</Text>
               {hasAnswer ? (
                 isCorrect ? (
                   <Tag color="success" icon={<CheckCircleOutlined />}>Correct</Tag>
@@ -257,7 +242,7 @@ const DropdownListResult = ({ question }) => {
               <div className="text-sm">
                 <Text type="secondary">Your answer: </Text>
                 <Text delete={!isCorrect && hasAnswer} type={isCorrect ? 'success' : hasAnswer ? 'danger' : 'secondary'}>
-                  {userSelectedValue || 'None'}
+                  {userVal || 'None'}
                 </Text>
               </div>
             </div>
@@ -405,13 +390,22 @@ const GroupAnswerComparison = ({ question }) => {
 }
 
 const SubjectiveAnswerView = ({ question }) => {
+  const isSpeaking = question.type?.toLowerCase() === 'speaking' || 
+                    question.userResponse?.audio;
+  
   return (
     <div className="mt-4 flex flex-col gap-3">
       <div className="rounded-lg border border-gray-200 bg-[#F8F9FA] p-4">
         <Text strong className="block mb-2 text-[#003087]">Your Answer</Text>
-        <div className="whitespace-pre-wrap text-sm leading-relaxed">
-          {question.userResponse?.text || <span className="italic text-gray-400">No response recorded.</span>}
-        </div>
+        {isSpeaking && question.userResponse?.audio ? (
+          <div className="rounded-lg border border-gray-200 bg-white p-3">
+            <audio controls src={question.userResponse.audio} className="w-full" />
+          </div>
+        ) : (
+          <div className="whitespace-pre-wrap text-sm leading-relaxed">
+            {question.userResponse?.text || <span className="italic text-gray-400">No response recorded.</span>}
+          </div>
+        )}
       </div>
       {question.userResponse?.comment && (
         <div className="rounded-lg border border-blue-50 bg-blue-50/50 p-4">
