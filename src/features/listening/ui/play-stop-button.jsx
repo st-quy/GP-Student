@@ -1,24 +1,32 @@
 import { PlayCircleOutlined, PauseCircleOutlined } from '@ant-design/icons'
 import { Button } from 'antd'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 
 const STORAGE_KEY = 'listening_played_questions'
 
 const getPlayedQuestions = () => {
-  const stored = localStorage.getItem(STORAGE_KEY)
-  return stored ? JSON.parse(stored) : {}
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    return stored ? JSON.parse(stored) : {}
+  } catch {
+    return {}
+  }
 }
 
 const savePlayedQuestions = questions => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(questions))
 }
 
-const playedQuestions = getPlayedQuestions()
-
 const AudioPlayer = ({ src, id, questionId, playAttempt, onPlayingChange, isOtherPlaying, setIsOtherPlaying }) => {
   const [isPlaying, setIsPlaying] = useState(false)
+  const [hasPlayed, setHasPlayed] = useState(false)
   const audioRef = useRef(null)
   const isPlayingRef = useRef(false)
+
+  useEffect(() => {
+    const played = getPlayedQuestions()
+    setHasPlayed(!!played[questionId]?.[playAttempt])
+  }, [questionId, playAttempt, src])
 
   useEffect(() => {
     setIsPlaying(false)
@@ -41,7 +49,7 @@ const AudioPlayer = ({ src, id, questionId, playAttempt, onPlayingChange, isOthe
     }
   }, [isOtherPlaying])
 
-  const handlePlayPause = () => {
+  const handlePlayPause = useCallback(() => {
     const audio = audioRef.current
     if (!audio) {
       return
@@ -52,30 +60,35 @@ const AudioPlayer = ({ src, id, questionId, playAttempt, onPlayingChange, isOthe
       setIsPlaying(false)
       isPlayingRef.current = false
       setIsOtherPlaying(false)
-    } else if (!playedQuestions[questionId]?.[playAttempt]) {
+    } else if (!hasPlayed) {
       setIsOtherPlaying(true)
       audio
         .play()
         .then(() => {
           setIsPlaying(true)
           isPlayingRef.current = true
-          if (!playedQuestions[questionId]) {
-            playedQuestions[questionId] = {}
+          const updated = getPlayedQuestions()
+          if (!updated[questionId]) {
+            updated[questionId] = {}
           }
-          playedQuestions[questionId][playAttempt] = true
-          savePlayedQuestions(playedQuestions)
+          updated[questionId][playAttempt] = true
+          savePlayedQuestions(updated)
+          setHasPlayed(true)
         })
-        .catch(error => console.error('Audio playback failed:', error))
+        .catch(error => {
+          console.error('Audio playback failed:', error)
+          setIsOtherPlaying(false)
+        })
     }
-  }
+  }, [isPlaying, hasPlayed, questionId, playAttempt, setIsOtherPlaying])
 
-  const handleEnded = () => {
+  const handleEnded = useCallback(() => {
     setIsPlaying(false)
     isPlayingRef.current = false
     setIsOtherPlaying(false)
-  }
+  }, [setIsOtherPlaying])
 
-  const hasPlayed = playedQuestions[questionId]?.[playAttempt] || false
+  const disabled = (hasPlayed && !isPlaying) || (isOtherPlaying && !isPlaying)
 
   return (
     <div className="flex items-center space-x-4">
@@ -84,7 +97,7 @@ const AudioPlayer = ({ src, id, questionId, playAttempt, onPlayingChange, isOthe
         shape="circle"
         icon={isPlaying ? <PauseCircleOutlined style={{ color: 'white' }} /> : <PlayCircleOutlined />}
         onClick={handlePlayPause}
-        disabled={(hasPlayed && !isPlaying) || (isOtherPlaying && !isPlaying)}
+        disabled={disabled}
         style={{ backgroundColor: isPlaying ? 'green' : undefined }}
       />
       <span>Play/Stop</span>
