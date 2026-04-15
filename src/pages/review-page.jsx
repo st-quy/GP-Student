@@ -281,21 +281,16 @@ const OrderingResult = ({ question }) => {
     }
   } catch (e) {}
 
-  // 2. Try to get correct map (only works for Teachers/Admins)
+  // 2. Build correctMap from options using correct order
+  // The options array is in CORRECT order (0-indexed), position = index + 1
   try {
     const rawContent = question.resources?.answerContent || question.AnswerContent
     const contentObj = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent
     
-    // For ordering, options typically contains all possible items
     if (contentObj?.options && Array.isArray(contentObj.options)) {
       allOptions = contentObj.options;
-    }
-
-    if (contentObj?.correctAnswer && Array.isArray(contentObj.correctAnswer)) {
-      contentObj.correctAnswer.forEach(item => {
-        if (item.value !== "hidden") {
-          correctMap[item.value] = String(item.key).trim()
-        }
+      contentObj.options.forEach((option, idx) => {
+        correctMap[String(idx + 1)] = String(option).trim()
       })
     }
   } catch (e) {}
