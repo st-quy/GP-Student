@@ -255,7 +255,6 @@ const DropdownListResult = ({ question }) => {
 
 const OrderingResult = ({ question }) => {
   let userList = []
-  let correctMap = {}
   let allOptions = []
 
   // 1. Get student's answer list
@@ -266,46 +265,29 @@ const OrderingResult = ({ question }) => {
     }
   } catch (e) {}
 
-  // 2. Build correctMap from options using correct order
-  // The options array is in CORRECT order (0-indexed), position = index + 1
+  // 2. Get options for display count
   try {
     const rawContent = question.resources?.answerContent || question.AnswerContent
     const contentObj = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent
-    
     if (contentObj?.options && Array.isArray(contentObj.options)) {
       allOptions = contentObj.options;
-      contentObj.options.forEach((option, idx) => {
-        correctMap[String(idx + 1)] = String(option).trim()
-      })
     }
   } catch (e) {}
 
-  // 3. Determine how many positions to show
-  const maxPosition = Math.max(
-    userList.length, 
-    allOptions.length,
-    Object.keys(correctMap).length
-  )
-  
+  // 3. Determine max positions to display
+  const maxPosition = Math.max(userList.length, allOptions.length)
   const positions = Array.from({ length: maxPosition }, (_, i) => i + 1)
 
   return (
     <div className="mt-4 flex flex-col gap-4">
       {positions.map((pos) => {
         const userItem = userList?.find(u => Number(u.value) === pos)
-        const content = userItem ? String(userItem.key).trim() : 'No answer'
+        const userSentence = userItem ? String(userItem.key).trim() : null
         
-        const correctContentForThisSlot = correctMap[pos]
-        const hasCorrectMap = Object.keys(correctMap).length > 0
-        
-        let isCorrectPosition = false;
-        if (question.correctnessMap && question.correctnessMap[pos] !== undefined) {
-          isCorrectPosition = question.correctnessMap[pos];
-        } else if (hasCorrectMap) {
-          isCorrectPosition = (correctContentForThisSlot === content);
-        } else {
-          isCorrectPosition = !!question.isCorrect;
-        }
+        // Use correctnessMap from backend if available (keys are position numbers)
+        const isCorrectPosition = question.correctnessMap && question.correctnessMap[String(pos)] !== undefined
+          ? question.correctnessMap[String(pos)]
+          : !!question.isCorrect
 
         return (
           <div key={pos} className="rounded-lg border border-gray-200 p-4">
@@ -313,7 +295,9 @@ const OrderingResult = ({ question }) => {
             <div className="flex flex-col gap-2">
               <div className={`rounded-md border p-3 ${isCorrectPosition ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}`}>
                 <div className="mb-1 text-xs font-semibold uppercase text-gray-400">Your Answer</div>
-                <div className={`font-medium ${isCorrectPosition ? 'text-green-700' : 'text-red-700'}`}>{content}</div>
+                <div className={`font-medium ${isCorrectPosition ? 'text-green-700' : 'text-red-700'}`}>
+                  {userSentence || 'No answer'}
+                </div>
               </div>
             </div>
           </div>

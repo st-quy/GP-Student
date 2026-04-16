@@ -406,7 +406,6 @@ const ReadingInlineResult = ({ question }) => {
 
 const OrderingResult = ({ question }) => {
   let userList = []
-  let correctMap = {}
   let allOptions = []
 
   // 1. Get student's answer list
@@ -417,42 +416,28 @@ const OrderingResult = ({ question }) => {
     }
   } catch (e) {}
 
-  // 2. Build correctMap from options using correct order
-  // The options array is in CORRECT order (0-indexed)
-  // Position = index + 1
+  // 2. Get options for display count
   try {
     const rawContent = question.resources?.answerContent || question.AnswerContent
     const contentObj = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent
-    
     if (contentObj?.options && Array.isArray(contentObj.options)) {
       allOptions = contentObj.options;
-      // Build correctMap: position (1-indexed) -> sentence
-      contentObj.options.forEach((option, idx) => {
-        correctMap[String(idx + 1)] = String(option).trim()
-      })
     }
   } catch (e) {}
 
   // 3. Determine max positions to display
-  const maxPosition = Math.max(
-    userList.length, 
-    allOptions.length,
-    Object.keys(correctMap).length
-  )
-  
+  const maxPosition = Math.max(userList.length, allOptions.length)
   const displayPositions = Array.from({ length: maxPosition }, (_, i) => i + 1)
 
   return (
     <div className="mt-4 flex flex-col gap-4">
       {displayPositions.map((pos) => {
         const userItem = userList?.find(u => Number(u.value) === pos)
-        const content = userItem ? String(userItem.key).trim() : 'No answer'
+        const userSentence = userItem ? String(userItem.key).trim() : null
         
-        const correctContentForThisSlot = correctMap[pos]
-        // Use correctMap from options for per-slot comparison
-        const hasCorrectMap = Object.keys(correctMap).length > 0
-        const isCorrectPosition = hasCorrectMap 
-          ? (correctContentForThisSlot === content)
+        // Use correctnessMap from backend if available (keys are position numbers)
+        const isCorrectPosition = question.correctnessMap && question.correctnessMap[String(pos)] !== undefined
+          ? question.correctnessMap[String(pos)]
           : !!question.isCorrect
 
         return (
@@ -461,7 +446,9 @@ const OrderingResult = ({ question }) => {
             <div className="flex flex-col gap-2">
               <div className={`rounded-md border p-3 ${isCorrectPosition ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}`}>
                 <div className="mb-1 text-xs font-semibold uppercase text-gray-400">Your Answer</div>
-                <div className={`font-medium ${isCorrectPosition ? 'text-green-700' : 'text-red-700'}`}>{content}</div>
+                <div className={`font-medium ${isCorrectPosition ? 'text-green-700' : 'text-red-700'}`}>
+                  {userSentence || 'No answer'}
+                </div>
               </div>
             </div>
           </div>
@@ -573,32 +560,9 @@ const checkIsFullyCorrect = (q) => {
     const type = (q.type || '').toLowerCase()
     if (['speaking', 'writing'].includes(type)) return !!rawUser
     
-    // For ordering questions, compute correctness locally using options array
+    // For ordering questions, rely on backend's isCorrect (backend handles correctness correctly)
     if (type === 'ordering') {
-      const userAnsObj = typeof rawUser === 'string' ? JSON.parse(rawUser) : rawUser
-      if (!Array.isArray(userAnsObj)) return false
-      
-      // Get options (in correct order) from resources
-      const rawContent = q.resources?.answerContent
-      const contentObj = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent
-      const options = contentObj?.options || []
-      
-      if (options.length === 0) return q.isCorrect || false
-      
-      // Build maps
-      const userPositionMap = {}
-      userAnsObj.forEach(item => {
-        userPositionMap[item.value] = String(item.key).trim()
-      })
-      
-      // Compare each position
-      const isCorrect = options.every((option, idx) => {
-        const position = idx + 1
-        const userSentence = userPositionMap[position]
-        return userSentence === String(option).trim()
-      })
-      
-      return isCorrect
+      return q.isCorrect || false
     }
     
     // For other question types, rely on backend's isCorrect if ground truth is hidden
