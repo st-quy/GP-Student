@@ -30,6 +30,10 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
   const [isAutoSubmitting, setIsAutoSubmitting] = useState(false)
   const autoSubmitTimerRef = useRef(null)
   const buttonRef = useRef(null)
+  const recordingCompletedRef = useRef(false)
+  const uploadSuccessRef = useRef(false)
+  const autoAdvanceTimeoutRef = useRef(null)
+  const [isAutoAdvancing, setIsAutoAdvancing] = useState(false)
 
   const parseTime = timeStr => {
     const [min, sec] = timeStr.split(':').map(Number)
@@ -105,7 +109,7 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
             if (phase === 'reading') {
               if (isPart4) {
                 setPhase('preparing')
-                setCountdown(60)
+                setCountdown(3)
               } else {
                 setPhase('answering')
                 setCountdown(parseTime(currentTimePair.answer))
@@ -119,6 +123,7 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
               startRecording()
             } else if (phase === 'answering') {
               setIsRecording(false)
+              recordingCompletedRef.current = true
               if (mediaRecorderRef?.state === 'recording') {
                 mediaRecorderRef.stop()
               }
@@ -141,9 +146,7 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
   }, [isActive, isTimerRunning, phase, currentTimePair])
 
   useEffect(() => {
-    if (!isRecording && phase === 'answering' && countdown === 0) {
-      console.info('Recording ended. Waiting for student to click next.')
-    }
+    // This effect is intentionally empty - monitoring recording end state
   }, [isRecording, phase, countdown])
 
   useEffect(() => {
@@ -152,12 +155,35 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
     }
   }, [currentQuestionIndex])
 
+  useEffect(() => {
+    if (recordingCompletedRef.current && uploadSuccessRef.current && !isUploading) {
+      const isLast = currentQuestionIndex === totalQuestions - 1
+      
+      const timeoutId = setTimeout(() => {
+        if (isLast || isPart4) {
+          handleNextPart()
+        } else {
+          handleNextQuestion()
+        }
+      }, 800)
+      
+      setIsAutoAdvancing(true)
+      
+      return () => {
+        clearTimeout(timeoutId)
+        setIsAutoAdvancing(false)
+      }
+    }
+  }, [isUploading, currentQuestionIndex, totalQuestions, isPart4])
+
   const handleStartPart = () => {
     setShowIntro(false)
     setIsActive(true)
     setIsTimerRunning(true)
     setPhase('reading')
     setCountdown(parseTime(getTimePair(0).read))
+    recordingCompletedRef.current = false
+    uploadSuccessRef.current = false
   }
 
   if (showIntro) {
@@ -206,6 +232,7 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
               const result = await uploadToMinIO(blob)
 
               setHasUploaded(true)
+              uploadSuccessRef.current = true
               if (currentQuestion && result.fileUrl) {
                 addQuestionAnswer(currentQuestion.ID, result.fileUrl)
               }
@@ -228,6 +255,8 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
     if (autoSubmitTimerRef.current) {
       clearTimeout(autoSubmitTimerRef.current)
     }
+    recordingCompletedRef.current = false
+    uploadSuccessRef.current = false
     setIsButtonLoading(true)
 
     // Force stop recording if active
@@ -258,6 +287,8 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
     if (autoSubmitTimerRef.current) {
       clearTimeout(autoSubmitTimerRef.current)
     }
+    recordingCompletedRef.current = false
+    uploadSuccessRef.current = false
     setIsButtonLoading(true)
 
     // Force stop recording if active
@@ -297,6 +328,7 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
         isUploading={isUploading}
         isButtonLoading={isButtonLoading || submitMutation.isPending}
         buttonRef={buttonRef}
+        isAutoAdvancing={isAutoAdvancing}
       />
       <div className="flex h-auto w-full flex-col items-center justify-center bg-gradient-to-br from-[#003087] via-[#002b6c] to-[#001f4d] p-4 lg:h-screen lg:w-1/3 lg:p-0">
         <h2 className="mb-2 text-2xl font-bold text-white lg:mb-4 lg:text-4xl">
