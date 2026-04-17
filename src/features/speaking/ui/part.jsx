@@ -76,7 +76,7 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
   })
 
   useEffect(() => {
-    setShowIntro(true);
+    setShowIntro(true)
     setIsActive(false)
     setIsTimerRunning(false)
     setPhase('reading')
@@ -158,7 +158,7 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
   useEffect(() => {
     if (recordingCompletedRef.current && uploadSuccessRef.current && !isUploading) {
       const isLast = currentQuestionIndex === totalQuestions - 1
-      
+
       const timeoutId = setTimeout(() => {
         if (isLast || isPart4) {
           handleNextPart()
@@ -166,9 +166,9 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
           handleNextQuestion()
         }
       }, 800)
-      
+
       setIsAutoAdvancing(true)
-      
+
       return () => {
         clearTimeout(timeoutId)
         setIsAutoAdvancing(false)

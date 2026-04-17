@@ -48,30 +48,32 @@ const ListeningTest = () => {
     queryFn: () => fetchListeningTestDetails()
   })
 
-  const formatQuestionData = useCallback((question) => {
+  const formatQuestionData = useCallback(question => {
     if (!question) return null
     try {
-      const answerContent = typeof question.AnswerContent === 'string'
-        ? JSON.parse(question.AnswerContent)
-        : question.AnswerContent
+      const answerContent =
+        typeof question.AnswerContent === 'string' ? JSON.parse(question.AnswerContent) : question.AnswerContent
 
       if (question.Type === 'listening-questions-group' && answerContent?.groupContent?.listContent?.length > 0) {
         return answerContent.groupContent.listContent.map(subQuestion => {
-          const options = subQuestion.options?.map((option, index) => ({
-            key: String.fromCharCode(65 + index),
-            value: option
-          })) || []
+          const options =
+            subQuestion.options?.map((option, index) => ({
+              key: String.fromCharCode(65 + index),
+              value: option
+            })) || []
 
           return {
             ...question,
             ID: `${question.ID}-${subQuestion.ID}`,
             Content: subQuestion.content,
             Type: subQuestion.type,
-            AnswerContent: JSON.stringify([{
-              title: subQuestion.content,
-              options,
-              correctAnswer: subQuestion.correctAnswer
-            }])
+            AnswerContent: JSON.stringify([
+              {
+                title: subQuestion.content,
+                options,
+                correctAnswer: subQuestion.correctAnswer
+              }
+            ])
           }
         })
       }
@@ -84,11 +86,13 @@ const ListeningTest = () => {
 
         return {
           ...question,
-          AnswerContent: JSON.stringify([{
-            title: question.Content,
-            options,
-            correctAnswer: answerContent.correctAnswer
-          }])
+          AnswerContent: JSON.stringify([
+            {
+              title: question.Content,
+              options,
+              correctAnswer: answerContent.correctAnswer
+            }
+          ])
         }
       }
 
@@ -133,7 +137,9 @@ const ListeningTest = () => {
           answerText = ua ?? null
         }
 
-        console.log(`Q[${question.Sequence}] ID=${question.ID} Type=${question.Type} | ua=${JSON.stringify(ua)} | answerText=${JSON.stringify(answerText)}`)
+        console.log(
+          `Q[${question.Sequence}] ID=${question.ID} Type=${question.Type} | ua=${JSON.stringify(ua)} | answerText=${JSON.stringify(answerText)}`
+        )
 
         questions.push({
           questionId: question.ID,
@@ -179,7 +185,9 @@ const ListeningTest = () => {
         audioGroups[question.AudioKeys].questions.push({ ...question, sequence: question.Sequence || 999 })
       })
     })
-    return Object.values(audioGroups).sort((a, b) => (a.questions[0]?.sequence || 999) - (b.questions[0]?.sequence || 999))
+    return Object.values(audioGroups).sort(
+      (a, b) => (a.questions[0]?.sequence || 999) - (b.questions[0]?.sequence || 999)
+    )
   }, [testData?.ID])
 
   const unansweredCount = useMemo(() => {
@@ -188,7 +196,10 @@ const ListeningTest = () => {
     testData.Sections[0].Parts.forEach(part => {
       part.Questions.forEach(question => {
         if (question.Type === 'listening-questions-group') {
-          const subQs = typeof question.AnswerContent === 'string' ? JSON.parse(question.AnswerContent)?.groupContent?.listContent : question.AnswerContent?.groupContent?.listContent
+          const subQs =
+            typeof question.AnswerContent === 'string'
+              ? JSON.parse(question.AnswerContent)?.groupContent?.listContent
+              : question.AnswerContent?.groupContent?.listContent
           if (subQs) {
             const allAnswered = subQs.every(sub => userAnswers[`${question.ID}-${sub.ID}`] !== undefined)
             if (!allAnswered) count++
@@ -210,7 +221,8 @@ const ListeningTest = () => {
     const audioQuestionId = group?.questions[0]?.ID
     if (!audioQuestionId) return true
     const playedQuestions = JSON.parse(localStorage.getItem('listening_played_questions') || '{}')
-    const hasPlayed = playedQuestions[audioQuestionId] && (playedQuestions[audioQuestionId][1] || playedQuestions[audioQuestionId][2])
+    const hasPlayed =
+      playedQuestions[audioQuestionId] && (playedQuestions[audioQuestionId][1] || playedQuestions[audioQuestionId][2])
     if (!hasPlayed) {
       message.warning('Please listen to the Audio before choosing the answer.')
       return false
@@ -243,21 +255,24 @@ const ListeningTest = () => {
     }))
   }
 
-  const handleSubmitAnswers = useCallback(async (isAutoSubmit = false) => {
-    try {
-      const payload = buildSubmissionPayload()
-      console.log('>>> Submitting payload:', JSON.stringify(payload, null, 2))
-      await saveListeningAnswers(payload)
-      console.log('>>> Submission successful')
-      setIsSubmitted(true)
-      localStorage.setItem('listening_test_submitted', 'true')
-      localStorage.setItem('current_skill', 'grammar')
-    } catch (error) {
-      console.error('>>> Submission failed:', error)
-      setErrorMessage(error.message)
-      setShowErrorModal(true)
-    }
-  }, [buildSubmissionPayload, setErrorMessage, setShowErrorModal])
+  const handleSubmitAnswers = useCallback(
+    async (isAutoSubmit = false) => {
+      try {
+        const payload = buildSubmissionPayload()
+        console.log('>>> Submitting payload:', JSON.stringify(payload, null, 2))
+        await saveListeningAnswers(payload)
+        console.log('>>> Submission successful')
+        setIsSubmitted(true)
+        localStorage.setItem('listening_test_submitted', 'true')
+        localStorage.setItem('current_skill', 'grammar')
+      } catch (error) {
+        console.error('>>> Submission failed:', error)
+        setErrorMessage(error.message)
+        setShowErrorModal(true)
+      }
+    },
+    [buildSubmissionPayload, setErrorMessage, setShowErrorModal]
+  )
 
   useEffect(() => {
     window.addEventListener('forceSubmit', handleSubmitAnswers)
@@ -281,12 +296,15 @@ const ListeningTest = () => {
   return (
     <>
       <TestNavigation
-        testData={{ ...testData, Parts: navigatorQuestions.map(q => ({ ...q.question.Part, Questions: [q.question] })) }}
+        testData={{
+          ...testData,
+          Parts: navigatorQuestions.map(q => ({ ...q.question.Part, Questions: [q.question] }))
+        }}
         currentQuestion={currentGroup?.questions[0]}
         flatIndex={currentPartIndex}
         totalQuestions={totalQuestions}
         isFlagged={isFlagged}
-        onFlag={(f) => {
+        onFlag={f => {
           const id = currentGroup?.questions[0]?.ID
           if (!id) return
           const updated = f ? [...flaggedQuestions, id] : flaggedQuestions.filter(x => x !== id)
@@ -303,8 +321,14 @@ const ListeningTest = () => {
       >
         {currentGroup && (
           <>
-            <Title level={5} className="mb-6 text-lg">{currentGroup.questions[0].Content}</Title>
-            <PlayStopButton audioUrl={currentGroup.audioUrl} questionId={currentGroup.questions[0]?.ID} onPlayingChange={setIsAudioPlaying} />
+            <Title level={5} className="mb-6 text-lg">
+              {currentGroup.questions[0].Content}
+            </Title>
+            <PlayStopButton
+              audioUrl={currentGroup.audioUrl}
+              questionId={currentGroup.questions[0]?.ID}
+              onPlayingChange={setIsAudioPlaying}
+            />
           </>
         )}
 
@@ -316,7 +340,9 @@ const ListeningTest = () => {
               <div key={question.ID} className="mt-6">
                 {formattedQ.map(subQ => (
                   <div key={subQ.ID} className="mb-8">
-                    <Title level={5} className="mb-4 text-base font-normal">{subQ.Content}</Title>
+                    <Title level={5} className="mb-4 text-base font-normal">
+                      {subQ.Content}
+                    </Title>
                     <MultipleChoice
                       questionData={subQ}
                       userAnswer={userAnswers}
@@ -365,7 +391,13 @@ const ListeningTest = () => {
         })}
       </TestNavigation>
 
-      <Modal title="Submission Error" open={showErrorModal} onOk={() => setShowErrorModal(false)} onCancel={() => setShowErrorModal(false)} okText="OK">
+      <Modal
+        title="Submission Error"
+        open={showErrorModal}
+        onOk={() => setShowErrorModal(false)}
+        onCancel={() => setShowErrorModal(false)}
+        okText="OK"
+      >
         <p>{errorMessage}</p>
       </Modal>
     </>
