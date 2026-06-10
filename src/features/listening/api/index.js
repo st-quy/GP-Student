@@ -1,5 +1,6 @@
 import axiosInstance from '@shared/config/axios'
 import { getGlobalDataFromStorage } from '@shared/hooks/useGlobalData'
+import { normalizeExamDataSequence } from '@shared/lib/sortExamData'
 
 export const fetchListeningTestDetails = async () => {
   try {
@@ -20,7 +21,7 @@ export const fetchListeningTestDetails = async () => {
       }
     })
 
-    return response.data
+    return normalizeExamDataSequence(response.data)
   } catch (error) {
     console.error('Error fetching listening test details:', error)
     throw error

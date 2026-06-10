@@ -4,6 +4,7 @@ import { submitGrammarTest } from '@features/grammar/service'
 import FooterNavigator from '@features/grammar/ui/grammar-footer-navigator'
 import QuestionForm from '@features/grammar/ui/grammar-question-form'
 import QuestionNavigatorContainer from '@features/grammar/ui/grammar-question-navigator-container'
+import { sortBySequence } from '@shared/lib/sortExamData'
 import FlagButton from '@shared/ui/flag-button'
 import NextScreen from '@shared/ui/submission/next-screen'
 import { useQuery } from '@tanstack/react-query'
@@ -26,33 +27,24 @@ const GrammarTest = () => {
     queryKey: ['grammarQuestions'],
     queryFn: async () => {
       const response = await fetchGrammarTestDetails()
-      const sortedParts = response.Sections?.[0]?.Parts.sort((a, b) => {
-        const partNumberA = parseInt(a.Content.match(/Part (\d+)/)?.[1]) || 0
-        const partNumberB = parseInt(b.Content.match(/Part (\d+)/)?.[1]) || 0
-        return partNumberA - partNumberB
-      })
+      const sortedParts = sortBySequence(response.Sections?.[0]?.Parts || []).map(part => ({
+        ...part,
+        Questions: sortBySequence(part.Questions || [])
+      }))
 
-      sortedParts.forEach(part => {
-        if (part.Questions && Array.isArray(part.Questions)) {
-          part.Questions.sort((a, b) => {
-            const sequenceA = a.Sequence || 0
-            const sequenceB = b.Sequence || 0
-            return sequenceA - sequenceB
-          })
-        }
-      })
-
-      return { ...response, Parts: sortedParts }
+      return {
+        ...response,
+        Sections: [
+          {
+            ...response.Sections?.[0],
+            Parts: sortedParts
+          }
+        ]
+      }
     }
   })
 
-  const mergedArray = data?.Sections?.[0]?.Parts.flatMap(part => part.Questions) || []
-
-  mergedArray.sort((a, b) => {
-    const sequenceA = a.Sequence || 0
-    const sequenceB = b.Sequence || 0
-    return sequenceA - sequenceB
-  })
+  const mergedArray = data?.Sections?.[0]?.Parts.flatMap(part => sortBySequence(part.Questions || [])) || []
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answers, setAnswers] = useState(() => JSON.parse(localStorage.getItem('grammarAnswers')) || {})

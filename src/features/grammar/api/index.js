@@ -1,4 +1,5 @@
 import axiosInstance from '@shared/config/axios'
+import { normalizeExamDataSequence } from '@shared/lib/sortExamData'
 
 export const fetchGrammarTestDetails = async () => {
   try {
@@ -14,19 +15,21 @@ export const fetchGrammarTestDetails = async () => {
       }
     })
 
-    if (!response.data) {
+    const data = normalizeExamDataSequence(response.data)
+
+    if (!data) {
       throw new Error('No data received from server')
     }
 
     if (
-      !response.data?.Sections?.[0]?.Parts ||
-      !Array.isArray(response.data?.Sections?.[0]?.Parts) ||
-      response.data?.Sections?.[0]?.Parts.length === 0
+      !data?.Sections?.[0]?.Parts ||
+      !Array.isArray(data?.Sections?.[0]?.Parts) ||
+      data?.Sections?.[0]?.Parts.length === 0
     ) {
       throw new Error('No grammar test parts available')
     }
 
-    const hasQuestions = response.data?.Sections?.[0]?.Parts.every(
+    const hasQuestions = data?.Sections?.[0]?.Parts.every(
       part => part.Questions && Array.isArray(part.Questions) && part.Questions.length > 0
     )
 
@@ -34,8 +37,8 @@ export const fetchGrammarTestDetails = async () => {
       throw new Error('Some parts are missing questions')
     }
 
-    if (response.data?.Sections?.[0]?.Parts) {
-      response.data?.Sections?.[0]?.Parts.forEach(part => {
+    if (data?.Sections?.[0]?.Parts) {
+      data?.Sections?.[0]?.Parts.forEach(part => {
         if (part.Questions && Array.isArray(part.Questions)) {
           part.Questions.forEach(question => {
             if (question.Content) {
@@ -46,7 +49,7 @@ export const fetchGrammarTestDetails = async () => {
       })
     }
 
-    return response.data
+    return data
   } catch (error) {
     console.error('Error fetching grammar test details:', error)
     throw error

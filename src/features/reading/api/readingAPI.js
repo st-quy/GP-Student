@@ -1,4 +1,5 @@
 import axiosInstance from '@shared/config/axios'
+import { normalizeExamDataSequence } from '@shared/lib/sortExamData'
 
 export const fetchReadingTestDetails = async () => {
   const globalData = JSON.parse(localStorage.getItem('globalData'))
@@ -12,7 +13,7 @@ export const fetchReadingTestDetails = async () => {
       skillName: 'READING'
     }
   })
-  return response.data
+  return normalizeExamDataSequence(response.data)
 }
 
 export const submitStudentAnswers = async submitData => {
