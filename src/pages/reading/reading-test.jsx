@@ -48,6 +48,16 @@ const isFullMatchingType = (type, part) => {
   return normalizedType === 'full-matching' || (normalizedType === 'matching' && Number(part?.Sequence) === 5)
 }
 
+const getReadingExampleAnswer = content => {
+  const match = String(content || '').match(/\b0\s*\.\s*\(([^)]+)\)/)
+  if (!match) return ''
+
+  return match[1]
+    .split('/')
+    .map(option => option.trim())
+    .filter(Boolean)[0] || ''
+}
+
 const getStableHash = value => {
   let hash = 0
   const text = String(value)
@@ -513,6 +523,7 @@ const ReadingTest = () => {
     if (currentPartIndex === 0 && processedData.type === 'paragraph') {
       const cleanedQuestion = processedData.question.replace(/\s*\([^)]*\)/g, '')
       const hasSlashFormat = currentQuestion.Content.includes('/') && currentQuestion.Content.split('/').length >= 2
+      const exampleAnswer = processedData.answers[0]?.[0] || getReadingExampleAnswer(currentQuestion.Content)
 
       return (
         <div className="mx-auto w-full max-w-4xl">
@@ -528,14 +539,17 @@ const ReadingTest = () => {
                       onChange={value =>
                         number === '0' ? undefined : handleAnswerSubmit({ ...answer, [number]: value })
                       }
-                      value={number === '0' ? processedData.answers[0]?.[0] : answer?.[number]}
+                      value={number === '0' ? exampleAnswer : answer?.[number]}
                       className="mx-2 my-2 inline-block"
                       size="large"
                       style={{ fontSize: '16px', minWidth: 100 }}
                       dropdownStyle={{ maxWidth: 'max-content' }}
                       disabled={number === '0'}
                     >
-                      {processedData.answers[number]?.map(option => {
+                      {(number === '0' && !processedData.answers[number]?.length
+                        ? [exampleAnswer]
+                        : processedData.answers[number] || []
+                      ).map(option => {
                         const displayText = option.replace(/^[A-Z]\. /, '')
                         return (
                           <Option key={option} value={option} style={{ whiteSpace: 'normal' }}>
