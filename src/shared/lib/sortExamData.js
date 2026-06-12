@@ -8,8 +8,8 @@ export const sortBySequence = (items = []) =>
     .map((item, index) => ({ item, index }))
     .sort((a, b) => {
       const sequenceDiff =
-        getSequenceValue(a.item?.Sequence, a.index) -
-        getSequenceValue(b.item?.Sequence, b.index);
+        getSequenceValue(a.item?.Sequence ?? a.item?.sequence, a.index) -
+        getSequenceValue(b.item?.Sequence ?? b.item?.sequence, b.index);
       return sequenceDiff || a.index - b.index;
     })
     .map(({ item }) => item);

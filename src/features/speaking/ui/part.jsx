@@ -9,6 +9,7 @@ import AudioVisualizer from '@features/speaking/ui/audio-visualizer'
 import PartIntro from '@features/speaking/ui/part-intro'
 import QuestionDisplay from '@features/speaking/ui/question-display'
 import TimerDisplay from '@features/speaking/ui/timer-display'
+import { sortBySequence } from '@shared/lib/sortExamData'
 import NextScreen from '@shared/ui/submission/next-screen'
 import { useMutation } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
@@ -41,7 +42,8 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
   }
   const isPart4 = data.Sequence === 4
 
-  const questions = (data.Questions || []).sort((a, b) => a.Sequence - b.Sequence)
+  const questions = sortBySequence(data.Questions || [])
+  const sortedData = { ...data, Questions: questions }
   const totalQuestions = questions.length
   const getTimePair = index => {
     const content = (data.Content || '').toLowerCase()
@@ -316,7 +318,7 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
   return (
     <div className="flex h-screen w-full flex-row rounded-xl bg-white">
       <QuestionDisplay
-        data={data}
+        data={sortedData}
         currentQuestion={currentQuestion}
         currentQuestionIndex={currentQuestionIndex}
         totalQuestions={totalQuestions}
