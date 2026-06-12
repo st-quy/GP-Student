@@ -10,6 +10,11 @@ import { useState } from 'react'
 
 const { Title } = Typography
 
+const toOrderSegment = value => {
+  const numberValue = Number(value)
+  return String(Number.isFinite(numberValue) ? numberValue : 999).padStart(4, '0')
+}
+
 const TestNavigation = ({
   testData,
   currentQuestion,
@@ -36,16 +41,20 @@ const TestNavigation = ({
 
     const allQuestions = []
     testData.Parts.forEach((part, partIndex) => {
-      part.Questions.forEach(question => {
+      part.Questions.forEach((question, questionIndex) => {
         allQuestions.push({
           partIndex,
           question,
-          sequence: question.Sequence || 999
+          sequence:
+            question._listeningOrder ||
+            `${toOrderSegment(part.Sequence ?? partIndex + 1)}-${toOrderSegment(
+              question.Sequence ?? questionIndex + 1
+            )}-${toOrderSegment(questionIndex)}`
         })
       })
     })
 
-    allQuestions.sort((a, b) => a.sequence - b.sequence)
+    allQuestions.sort((a, b) => String(a.sequence).localeCompare(String(b.sequence)))
 
     return allQuestions
   }

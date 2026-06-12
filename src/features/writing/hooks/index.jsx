@@ -3,6 +3,8 @@ import { useGlobalData } from '@shared/hooks/useGlobalData'
 import { message } from 'antd'
 import { useNavigate } from 'react-router-dom'
 
+const getSortedWritingQuestions = part => [...(part?.Questions || [])].sort((a, b) => (a.Sequence || 0) - (b.Sequence || 0))
+
 export const useSubmitWritingTest = () => {
   const navigate = useNavigate()
   const { getGlobalData, errorMessage, setErrorMessage, setShowErrorModal } = useGlobalData()
@@ -32,7 +34,7 @@ export const useSubmitWritingTest = () => {
       }
 
       data?.Sections?.[0]?.Parts.forEach(part => {
-        part.Questions.forEach((question, index) => {
+        getSortedWritingQuestions(part).forEach((question, index) => {
           const key = `answer-${part.ID}-${index}`
           const answerText = localAnswers[key] || ''
           payload.questions.push({

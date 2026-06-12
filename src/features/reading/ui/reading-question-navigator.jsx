@@ -98,7 +98,9 @@ const QuestionNavigatorContainer = ({
             return answer.answer.length === options.length
           }
 
-          case 'matching': {
+          case 'matching':
+          case 'dropdown-matching':
+          case 'full-matching': {
             // Dạng { leftItemKey: rightItemKey, ... }
             if (typeof answer !== 'object' || answer === null || Array.isArray(answer)) {
               return false

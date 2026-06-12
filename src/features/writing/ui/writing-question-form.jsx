@@ -1,4 +1,4 @@
-import { getWritingWordLimits } from '@features/writing/constance'
+import { getWritingWordLimits, limitTextByWords } from '@features/writing/constance'
 import { Form, Input, Typography } from 'antd'
 
 const { Text, Title } = Typography
@@ -12,10 +12,7 @@ const QuestionForm = ({
   wordCounts
 }) => {
   const handleTextAreaChange = (fieldName, value, maxWords) => {
-    const wordCount = countWords(value || '')
-    if (!maxWords || wordCount <= maxWords) {
-      handleTextChange(fieldName, value)
-    }
+    handleTextChange(fieldName, limitTextByWords(value, maxWords))
   }
 
   const handleKeyDown = (e, fieldName, maxWords) => {
@@ -107,7 +104,6 @@ const QuestionForm = ({
                 value={answers[fieldName] || ''}
                 onChange={e => handleTextAreaChange(fieldName, e.target.value, maxWords)}
                 onKeyDown={e => handleKeyDown(e, fieldName, maxWords)}
-                disabled={maxWords && wordCounts[fieldName] > maxWords}
               />
               {(minWords || maxWords) && (
                 <Text

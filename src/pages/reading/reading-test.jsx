@@ -17,6 +17,8 @@ const { Title, Text } = Typography
 const getDefaultAnswerByType = type => {
   switch (type) {
     case 'dropdown-list':
+    case 'dropdown-matching':
+    case 'full-matching':
       return {}
     case 'ordering':
     case 'matching':
@@ -36,6 +38,54 @@ const formatMultipleChoiceQuestion = question => ({
   AnswerContent:
     typeof question.AnswerContent === 'string' ? question.AnswerContent : JSON.stringify(question.AnswerContent)
 })
+
+const getSortedReadingQuestions = part => [...(part?.Questions || [])].sort((a, b) => (a.Sequence || 0) - (b.Sequence || 0))
+
+const isReadingMatchingType = type => ['matching', 'dropdown-matching', 'full-matching'].includes(String(type || '').toLowerCase())
+
+const isFullMatchingType = (type, part) => {
+  const normalizedType = String(type || '').toLowerCase()
+  return normalizedType === 'full-matching' || (normalizedType === 'matching' && Number(part?.Sequence) === 5)
+}
+
+const getStableHash = value => {
+  let hash = 0
+  const text = String(value)
+  for (let index = 0; index < text.length; index++) {
+    hash = (hash << 5) - hash + text.charCodeAt(index)
+    hash |= 0
+  }
+  return Math.abs(hash)
+}
+
+const getSeededRandom = seed => {
+  let state = seed || 1
+  return () => {
+    state = (state * 1664525 + 1013904223) % 4294967296
+    return state / 4294967296
+  }
+}
+
+const getShuffledOrderingOptions = (options, questionId) => {
+  if (!Array.isArray(options) || options.length <= 1) return options || []
+
+  const shuffledOptions = [...options]
+  const random = getSeededRandom(getStableHash(`${questionId}-${options.join('|')}`))
+
+  for (let index = shuffledOptions.length - 1; index > 0; index--) {
+    const swapIndex = Math.floor(random() * (index + 1))
+    const currentOption = shuffledOptions[index]
+    shuffledOptions[index] = shuffledOptions[swapIndex]
+    shuffledOptions[swapIndex] = currentOption
+  }
+
+  const isSameOrder = shuffledOptions.every((option, index) => option === options[index])
+  if (isSameOrder) {
+    shuffledOptions.push(shuffledOptions.shift())
+  }
+
+  return shuffledOptions
+}
 
 const ReadingTest = () => {
   // State to track if the test has been submitted
@@ -116,7 +166,8 @@ const ReadingTest = () => {
       return
     }
 
-    const currentQuestion = testData?.Sections?.[0]?.Parts[currentPartIndex].Questions[currentQuestionIndex]
+    const currentPart = testData?.Sections?.[0]?.Parts[currentPartIndex]
+    const currentQuestion = getSortedReadingQuestions(currentPart)[currentQuestionIndex]
 
     if (typeof answer === 'function') {
       setUserAnswers(prev => {
@@ -138,7 +189,9 @@ const ReadingTest = () => {
     }
 
     const formattedAnswer =
-      currentQuestion.Type === 'dropdown-list'
+      currentQuestion.Type === 'dropdown-list' ||
+      currentQuestion.Type === 'dropdown-matching' ||
+      currentQuestion.Type === 'full-matching'
         ? answer
         : typeof answer === 'object' && answer !== null
           ? answer
@@ -161,7 +214,8 @@ const ReadingTest = () => {
     const newIsFlagged = !isFlagged
     setIsFlagged(newIsFlagged)
 
-    const currentQuestion = testData?.Sections?.[0]?.Parts[currentPartIndex].Questions[currentQuestionIndex]
+    const currentPart = testData?.Sections?.[0]?.Parts[currentPartIndex]
+    const currentQuestion = getSortedReadingQuestions(currentPart)[currentQuestionIndex]
 
     setFlaggedQuestions(prev => {
       const newFlags = newIsFlagged ? [...prev, currentQuestion.ID] : prev.filter(id => id !== currentQuestion.ID)
@@ -195,6 +249,8 @@ const ReadingTest = () => {
             formattedAnswer.answerText = answer
             break
           case 'matching':
+          case 'dropdown-matching':
+          case 'full-matching':
             if (answer && typeof answer === 'object') {
               formattedAnswer.answerText = Object.entries(answer).map(([left, right]) => ({
                 left,
@@ -309,7 +365,7 @@ const ReadingTest = () => {
   }
 
   const currentPart = testData?.Sections?.[0]?.Parts[currentPartIndex]
-  const sortedQuestions = (currentPart.Questions || []).sort((a, b) => a.Sequence - b.Sequence)
+  const sortedQuestions = getSortedReadingQuestions(currentPart)
   const currentQuestion = sortedQuestions[currentQuestionIndex]
   const isLastPart = currentPartIndex === testData?.Sections?.[0]?.Parts.length - 1
 
@@ -320,7 +376,7 @@ const ReadingTest = () => {
       return false
     }
 
-    if (currentQuestion.Type === 'matching') {
+    if (isFullMatchingType(currentQuestion.Type, currentPart)) {
       return false
     }
 
@@ -396,7 +452,7 @@ const ReadingTest = () => {
 
     const answer = userAnswers[currentQuestion.ID] || {}
 
-    if (currentQuestion.Type === 'matching' && processedData.type === 'right-left') {
+    if (isFullMatchingType(currentQuestion.Type, currentPart) && processedData.type === 'right-left') {
       const contentLines = processedData.question.split('\n')
       const paragraphs = []
       let currentParagraph = ''
@@ -609,17 +665,22 @@ const ReadingTest = () => {
       case 'dropdown-list': {
         return renderDropdownQuestion()
       }
+      case 'dropdown-matching':
+      case 'full-matching': {
+        return renderDropdownQuestion()
+      }
       case 'ordering': {
         const options = (() => {
           try {
             if (Array.isArray(currentQuestion.AnswerContent)) {
-              return currentQuestion.AnswerContent
+              return getShuffledOrderingOptions(currentQuestion.AnswerContent, currentQuestion.ID)
             }
             if (typeof currentQuestion.AnswerContent === 'string') {
               const parsed = JSON.parse(currentQuestion.AnswerContent)
-              return Array.isArray(parsed) ? parsed : parsed.options || []
+              const parsedOptions = Array.isArray(parsed) ? parsed : parsed.options || []
+              return getShuffledOrderingOptions(parsedOptions, currentQuestion.ID)
             }
-            return currentQuestion.AnswerContent.options || []
+            return getShuffledOrderingOptions(currentQuestion.AnswerContent.options || [], currentQuestion.ID)
           } catch (e) {
             console.error('Error parsing ordering question options:', e)
             return []
@@ -649,7 +710,7 @@ const ReadingTest = () => {
         )
       }
       case 'matching': {
-        if (currentQuestion.Type === 'matching') {
+        if (isReadingMatchingType(currentQuestion.Type)) {
           return renderDropdownQuestion()
         }
         return (

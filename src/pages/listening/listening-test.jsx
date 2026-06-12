@@ -16,6 +16,39 @@ const { Title } = Typography
 
 const STORAGE_KEY = 'listening_test_answers'
 
+const getSequenceValue = (value, fallback = 999) => {
+  const sequence = Number(value)
+  return Number.isFinite(sequence) ? sequence : fallback
+}
+
+const formatOrderSegment = value => String(getSequenceValue(value)).padStart(4, '0')
+
+const getAudioQuestionNumber = value => {
+  const match = String(value || '').match(/(?:^|[/_-])Q(\d+)\.mp3(?:$|\?)/i)
+  return match ? Number(match[1]) : 999
+}
+
+const getQuestionOrder = (part, partIndex, question, questionIndex) => {
+  const partSequence = getSequenceValue(part?.Sequence, partIndex + 1)
+  const questionSequence = getSequenceValue(question?.Sequence, questionIndex + 1)
+  const audioQuestionNumber = getAudioQuestionNumber(question?.AudioKeys)
+
+  return {
+    partSequence,
+    questionSequence,
+    audioQuestionNumber,
+    originalIndex: questionIndex
+  }
+}
+
+const compareQuestionOrder = (a, b) =>
+  a.partSequence - b.partSequence ||
+  a.questionSequence - b.questionSequence ||
+  a.audioQuestionNumber - b.audioQuestionNumber ||
+  a.originalIndex - b.originalIndex
+
+const getAudioGroupKey = question => String(question?.AudioKeys || question?.ID || '')
+
 const ListeningTest = () => {
   const [currentPartIndex, setCurrentPartIndex] = useState(0)
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
@@ -47,6 +80,24 @@ const ListeningTest = () => {
     queryKey: ['listeningTest'],
     queryFn: () => fetchListeningTestDetails()
   })
+
+  const orderedListeningItems = useMemo(() => {
+    if (!testData?.Sections?.[0]?.Parts) return []
+
+    return testData.Sections[0].Parts.flatMap((part, partIndex) =>
+      (part.Questions || []).map((question, questionIndex) => ({
+        part,
+        partIndex,
+        question: {
+          ...question,
+          _listeningOrder: `${formatOrderSegment(part?.Sequence ?? partIndex + 1)}-${formatOrderSegment(
+            question?.Sequence ?? questionIndex + 1
+          )}-${formatOrderSegment(getAudioQuestionNumber(question?.AudioKeys))}-${formatOrderSegment(questionIndex)}`
+        },
+        order: getQuestionOrder(part, partIndex, question, questionIndex)
+      }))
+    ).sort((a, b) => compareQuestionOrder(a.order, b.order))
+  }, [testData])
 
   const formatQuestionData = useCallback(question => {
     if (!question) return null
@@ -105,7 +156,7 @@ const ListeningTest = () => {
 
   const buildSubmissionPayload = useCallback(() => {
     const globalData = getGlobalData()
-    if (!globalData || !testData?.Sections?.[0]?.Parts) {
+    if (!globalData || !orderedListeningItems.length) {
       throw new Error('Missing required data for submission')
     }
 
@@ -114,38 +165,36 @@ const ListeningTest = () => {
     console.log('=== SUBMISSION DEBUG ===')
     console.log('Full userAnswers:', JSON.stringify(userAnswers, null, 2))
 
-    testData.Sections[0].Parts.forEach(part => {
-      part.Questions.forEach(question => {
-        const ua = userAnswers[question.ID]
+    orderedListeningItems.forEach(({ question }) => {
+      const ua = userAnswers[question.ID]
 
-        let answerText
-        let answerAudio = null
+      let answerText
+      let answerAudio = null
 
-        if (question.Type === 'listening-questions-group') {
-          const subQs = question.AnswerContent?.groupContent?.listContent || []
-          answerText = subQs
-            .map(sub => ({
-              ID: sub.ID,
-              answer: userAnswers[`${question.ID}-${sub.ID}`]
-            }))
-            .filter(a => a.answer !== undefined)
-          answerAudio = ua?.answerAudio ?? null
-        } else if (ua && typeof ua === 'object' && 'answerText' in ua) {
-          answerText = ua.answerText
-          answerAudio = ua.answerAudio ?? null
-        } else {
-          answerText = ua ?? null
-        }
+      if (question.Type === 'listening-questions-group') {
+        const subQs = question.AnswerContent?.groupContent?.listContent || []
+        answerText = subQs
+          .map(sub => ({
+            ID: sub.ID,
+            answer: userAnswers[`${question.ID}-${sub.ID}`]
+          }))
+          .filter(a => a.answer !== undefined)
+        answerAudio = ua?.answerAudio ?? null
+      } else if (ua && typeof ua === 'object' && 'answerText' in ua) {
+        answerText = ua.answerText
+        answerAudio = ua.answerAudio ?? null
+      } else {
+        answerText = ua ?? null
+      }
 
-        console.log(
-          `Q[${question.Sequence}] ID=${question.ID} Type=${question.Type} | ua=${JSON.stringify(ua)} | answerText=${JSON.stringify(answerText)}`
-        )
+      console.log(
+        `Q[${question.Sequence}] ID=${question.ID} Type=${question.Type} | ua=${JSON.stringify(ua)} | answerText=${JSON.stringify(answerText)}`
+      )
 
-        questions.push({
-          questionId: question.ID,
-          answerText,
-          answerAudio
-        })
+      questions.push({
+        questionId: question.ID,
+        answerText,
+        answerAudio
       })
     })
 
@@ -160,35 +209,26 @@ const ListeningTest = () => {
       sessionParticipantId: globalData.sessionParticipantId,
       questions
     }
-  }, [userAnswers, testData, getGlobalData])
+  }, [userAnswers, orderedListeningItems, getGlobalData])
 
   const navigatorQuestions = useMemo(() => {
-    if (!testData?.Sections?.[0]?.Parts) return []
-    const allQuestions = []
-    testData.Sections[0].Parts.forEach((part, partIndex) => {
-      part.Questions.forEach(question => {
-        allQuestions.push({ partIndex, question, sequence: question.Sequence || 999 })
-      })
-    })
-    allQuestions.sort((a, b) => a.sequence - b.sequence)
-    return allQuestions.map(({ partIndex, question }) => ({ partIndex, questionIndex: 0, question }))
-  }, [testData?.ID])
+    return orderedListeningItems.map(({ partIndex, question }) => ({ partIndex, questionIndex: 0, question }))
+  }, [orderedListeningItems])
 
   const groupedQuestions = useMemo(() => {
-    if (!testData?.Sections?.[0]?.Parts) return []
     const audioGroups = {}
-    testData.Sections[0].Parts.forEach((part, partIndex) => {
-      part.Questions.forEach(question => {
-        if (!audioGroups[question.AudioKeys]) {
-          audioGroups[question.AudioKeys] = { audioUrl: question.AudioKeys, questions: [], partIndex }
-        }
-        audioGroups[question.AudioKeys].questions.push({ ...question, sequence: question.Sequence || 999 })
-      })
+    orderedListeningItems.forEach(({ partIndex, question, order }) => {
+      const groupKey = getAudioGroupKey(question)
+      if (!audioGroups[groupKey]) {
+        audioGroups[groupKey] = { audioUrl: question.AudioKeys, questions: [], partIndex, order }
+      }
+      audioGroups[groupKey].questions.push({ ...question, _order: order })
     })
-    return Object.values(audioGroups).sort(
-      (a, b) => (a.questions[0]?.sequence || 999) - (b.questions[0]?.sequence || 999)
-    )
-  }, [testData?.ID])
+    Object.values(audioGroups).forEach(group => {
+      group.questions.sort((a, b) => compareQuestionOrder(a._order, b._order))
+    })
+    return Object.values(audioGroups).sort((a, b) => compareQuestionOrder(a.order, b.order))
+  }, [orderedListeningItems])
 
   const unansweredCount = useMemo(() => {
     if (!testData?.Sections?.[0]?.Parts) return 0

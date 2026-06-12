@@ -6,7 +6,7 @@ export const DEFAULT_MIN_WORDS = {
 }
 
 export const DEFAULT_MAX_WORDS = {
-  1: 5,
+  1: 10,
   2: 45,
   3: 60,
   4: [75, 225]
@@ -22,13 +22,36 @@ const getLimitValue = (config, partNumber, questionIndex) => {
   return configuredValue ?? null
 }
 
+export const limitTextByWords = (text = '', maxWords) => {
+  if (!maxWords) return text
+
+  const value = String(text)
+  const wordMatches = [...value.matchAll(/\S+/g)]
+
+  if (wordMatches.length <= maxWords) return value
+
+  const lastAllowedWord = wordMatches[maxWords - 1]
+  return value.slice(0, lastAllowedWord.index + lastAllowedWord[0].length)
+}
+
 const parseWordRange = (text = '') => {
   const normalizedText = String(text)
-  const betweenMatch = normalizedText.match(/(\d+)\s*-\s*(\d+)\s*words?/i)
+    .replace(/[–—]/g, '-')
+    .replace(/\s+/g, ' ')
+
+  const betweenMatch = normalizedText.match(/(\d+)\s*(?:-|to)\s*(\d+)\s*words?/i)
   if (betweenMatch) {
     return {
       minWords: Number(betweenMatch[1]),
       maxWords: Number(betweenMatch[2])
+    }
+  }
+
+  const spacedRangeMatch = normalizedText.match(/\b(?:use|write(?:\s+in\s+sentences?)?)\s+(\d+)\s+(\d+)\s*words?/i)
+  if (spacedRangeMatch) {
+    return {
+      minWords: Number(spacedRangeMatch[1]),
+      maxWords: Number(spacedRangeMatch[2])
     }
   }
 
@@ -54,8 +77,8 @@ const parseAllowedMax = (text = '') => {
 export const getWritingWordLimits = ({ question, part, partNumber, questionIndex }) => {
   const parsedPartRange = parseWordRange(part?.Content)
   const parsedQuestionRange = parseWordRange(question?.Content)
-  const explicitMinWords = question?.minWords
-  const explicitMaxWords = question?.maxWords
+  const explicitMinWords = question?.minWords ?? question?.MinWords
+  const explicitMaxWords = question?.maxWords ?? question?.MaxWords
 
   const minWords =
     explicitMinWords ??
@@ -66,9 +89,10 @@ export const getWritingWordLimits = ({ question, part, partNumber, questionIndex
   const maxWords =
     explicitMaxWords ??
     parseAllowedMax(question?.SubContent) ??
+    parseAllowedMax(part?.SubContent) ??
+    getLimitValue(DEFAULT_MAX_WORDS, partNumber, questionIndex) ??
     parsedQuestionRange.maxWords ??
-    parsedPartRange.maxWords ??
-    getLimitValue(DEFAULT_MAX_WORDS, partNumber, questionIndex)
+    parsedPartRange.maxWords
 
   return {
     minWords,
