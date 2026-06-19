@@ -48,11 +48,11 @@ const Part = ({ data, timePairs = [{ read: '00:03', answer: '00:15' }], onNextPa
   const getTimePair = index => {
     const content = (data.Content || '').toLowerCase()
 
-    if (content.includes('part 1')) {
+    if (content.includes('part 1') || data.Sequence === 1) {
       return { read: '00:05', answer: '00:30' }
-    } else if (content.includes('part 2') || content.includes('part 3')) {
+    } else if (content.includes('part 2') || content.includes('part 3') || data.Sequence === 2 || data.Sequence === 3) {
       return { read: '00:05', answer: '00:45' }
-    } else if (isPart4) {
+    } else if (isPart4 || data.Sequence === 4) {
       return { read: '01:00', answer: '02:00' }
     }
 
