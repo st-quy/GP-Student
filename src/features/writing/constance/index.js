@@ -1,9 +1,4 @@
-export const DEFAULT_MIN_WORDS = {
-  1: 1,
-  2: 20,
-  3: 30,
-  4: [50, 120]
-}
+// Minimum word count removed — only max word limits are enforced
 
 export const DEFAULT_MAX_WORDS = {
   1: 10,
@@ -41,32 +36,15 @@ const parseWordRange = (text = '') => {
 
   const betweenMatch = normalizedText.match(/(\d+)\s*(?:-|to)\s*(\d+)\s*words?/i)
   if (betweenMatch) {
-    return {
-      minWords: Number(betweenMatch[1]),
-      maxWords: Number(betweenMatch[2])
-    }
+    return { maxWords: Number(betweenMatch[2]) }
   }
 
   const spacedRangeMatch = normalizedText.match(/\b(?:use|write(?:\s+in\s+sentences?)?)\s+(\d+)\s+(\d+)\s*words?/i)
   if (spacedRangeMatch) {
-    return {
-      minWords: Number(spacedRangeMatch[1]),
-      maxWords: Number(spacedRangeMatch[2])
-    }
+    return { maxWords: Number(spacedRangeMatch[2]) }
   }
 
-  const exactMatch = normalizedText.match(/about\s+(\d+)\s*words?/i)
-  if (exactMatch) {
-    return {
-      minWords: Number(exactMatch[1]),
-      maxWords: null
-    }
-  }
-
-  return {
-    minWords: null,
-    maxWords: null
-  }
+  return { maxWords: null }
 }
 
 const parseAllowedMax = (text = '') => {
@@ -77,14 +55,7 @@ const parseAllowedMax = (text = '') => {
 export const getWritingWordLimits = ({ question, part, partNumber, questionIndex }) => {
   const parsedPartRange = parseWordRange(part?.Content)
   const parsedQuestionRange = parseWordRange(question?.Content)
-  const explicitMinWords = question?.minWords ?? question?.MinWords
   const explicitMaxWords = question?.maxWords ?? question?.MaxWords
-
-  const minWords =
-    explicitMinWords ??
-    parsedQuestionRange.minWords ??
-    parsedPartRange.minWords ??
-    getLimitValue(DEFAULT_MIN_WORDS, partNumber, questionIndex)
 
   const maxWords =
     explicitMaxWords ??
@@ -95,7 +66,6 @@ export const getWritingWordLimits = ({ question, part, partNumber, questionIndex
     parsedPartRange.maxWords
 
   return {
-    minWords,
     maxWords
   }
 }

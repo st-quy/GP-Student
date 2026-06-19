@@ -113,7 +113,7 @@ const WritingTest = () => {
     }))
   }
 
-  // BUG_MT006: Validate word count before submit
+  // Validate word count before submit (max only)
   const validateWordCounts = useCallback(() => {
     if (!data?.Sections?.[0]?.Parts) return true
     const parts = data.Sections[0].Parts
@@ -124,18 +124,13 @@ const WritingTest = () => {
       for (let qi = 0; qi < questions.length; qi++) {
         const question = questions[qi]
         const fieldName = `answer-${part.ID}-${qi}`
-        const { minWords, maxWords } = getWritingWordLimits({
+        const { maxWords } = getWritingWordLimits({
           question,
           part,
           partNumber: partNum,
           questionIndex: qi
         })
         const wc = countWords(answers[fieldName] || '')
-
-        if (minWords && wc > 0 && wc < minWords) {
-          message.error(`Part ${partNum}, Question ${qi + 1}: minimum word count is ${minWords} (${wc}/${minWords})`)
-          return false
-        }
 
         if (maxWords && wc > maxWords) {
           message.error(`Part ${partNum}, Question ${qi + 1}: exceeds word limit (${wc}/${maxWords})`)

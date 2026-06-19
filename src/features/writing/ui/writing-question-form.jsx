@@ -62,14 +62,13 @@ const QuestionForm = ({
         .sort((a, b) => a.Sequence - b.Sequence)
         .map((question, index) => {
           const fieldName = `answer-${currentPart.ID}-${index}`
-          const { minWords, maxWords } = getWritingWordLimits({
+          const { maxWords } = getWritingWordLimits({
             question,
             part: currentPart,
             partNumber,
             questionIndex: index
           })
           const currentWordCount = wordCounts[fieldName] || 0
-          const isBelowMin = currentWordCount > 0 && minWords && currentWordCount < minWords
           const isAtOrOverMax = maxWords && currentWordCount >= maxWords
 
           return (
@@ -105,13 +104,11 @@ const QuestionForm = ({
                 onChange={e => handleTextAreaChange(fieldName, e.target.value, maxWords)}
                 onKeyDown={e => handleKeyDown(e, fieldName, maxWords)}
               />
-              {(minWords || maxWords) && (
+              {maxWords && (
                 <Text
-                  className={`mt-1 block text-sm ${
-                    isBelowMin || isAtOrOverMax ? 'text-red-500' : 'text-gray-500'
-                  }`}
+                  className={`mt-1 block text-sm ${isAtOrOverMax ? 'text-red-500' : 'text-gray-500'}`}
                 >
-                  {`Word count: ${currentWordCount}${minWords ? ` | Min: ${minWords}` : ''}${maxWords ? ` | Max: ${maxWords}` : ''}`}
+                  {`Word count: ${currentWordCount} | Max: ${maxWords}`}
                 </Text>
               )}
             </Form.Item>
